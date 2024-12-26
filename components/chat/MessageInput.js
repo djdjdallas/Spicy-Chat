@@ -1,5 +1,5 @@
 // components/chat/MessageInput.js
-import React, { memo, useCallback } from "react";
+import React, { memo, useCallback, useState } from "react";
 import {
   View,
   TextInput,
@@ -11,77 +11,74 @@ import {
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 
-export const MessageInput = memo(
-  ({ inputText, setInputText, sendMessage, isLoading }) => {
-    // Memoize the change handler
-    const handleChangeText = useCallback(
-      (text) => {
-        console.log("Input text changed:", text); // Debug log
-        setInputText(text);
-      },
-      [setInputText]
-    );
+export const MessageInput = memo(({ sendMessage, isLoading }) => {
+  // Local state for input text
+  const [localInputText, setLocalInputText] = useState("");
 
-    // Memoize the send handler
-    const handleSend = useCallback(() => {
-      console.log("Send button pressed, current text:", inputText); // Debug log
-      if (inputText.trim()) {
-        Keyboard.dismiss();
-        sendMessage(inputText); // Pass the input text directly
+  // Handle text changes locally
+  const handleChangeText = useCallback((text) => {
+    setLocalInputText(text);
+  }, []);
+
+  // Handle send with local state
+  const handleSend = useCallback(() => {
+    if (localInputText.trim()) {
+      Keyboard.dismiss();
+      sendMessage(localInputText);
+      setLocalInputText(""); // Clear local input after sending
+    }
+  }, [localInputText, sendMessage]);
+
+  // Handle return key press
+  const handleKeyPress = useCallback(
+    ({ nativeEvent }) => {
+      if (
+        Platform.OS === "ios" &&
+        nativeEvent.key === "Enter" &&
+        !nativeEvent.shiftKey
+      ) {
+        handleSend();
       }
-    }, [inputText, sendMessage]);
+    },
+    [handleSend]
+  );
 
-    // Handle return key press
-    const handleKeyPress = useCallback(
-      ({ nativeEvent }) => {
-        if (
-          Platform.OS === "ios" &&
-          nativeEvent.key === "Enter" &&
-          !nativeEvent.shiftKey
-        ) {
-          handleSend();
-        }
-      },
-      [handleSend]
-    );
+  const isDisabled = !localInputText?.trim() || isLoading;
 
-    const isDisabled = !inputText?.trim() || isLoading;
+  return (
+    <View style={styles.container}>
+      <View style={styles.inputContainer}>
+        <TextInput
+          style={styles.input}
+          value={localInputText}
+          onChangeText={handleChangeText}
+          placeholder="Type a message..."
+          placeholderTextColor="#666"
+          multiline
+          maxLength={2000}
+          editable={!isLoading}
+          onKeyPress={handleKeyPress}
+        />
 
-    return (
-      <View style={styles.container}>
-        <View style={styles.inputContainer}>
-          <TextInput
-            style={styles.input}
-            value={inputText}
-            onChangeText={handleChangeText}
-            placeholder="Type a message..."
-            placeholderTextColor="#666"
-            multiline
-            maxLength={2000}
-            editable={!isLoading}
-            onKeyPress={handleKeyPress}
-          />
-
-          <TouchableOpacity
-            style={[styles.sendButton, isDisabled && styles.sendButtonDisabled]}
-            onPress={handleSend}
-            disabled={isDisabled}
-          >
-            {isLoading ? (
-              <ActivityIndicator color="#fff" size="small" />
-            ) : (
-              <Ionicons
-                name="send"
-                size={24}
-                color={isDisabled ? "#999" : "#fff"}
-              />
-            )}
-          </TouchableOpacity>
-        </View>
+        <TouchableOpacity
+          style={[styles.sendButton, isDisabled && styles.sendButtonDisabled]}
+          onPress={handleSend}
+          disabled={isDisabled}
+        >
+          {isLoading ? (
+            <ActivityIndicator color="#fff" size="small" />
+          ) : (
+            <Ionicons
+              name="send"
+              size={24}
+              color={isDisabled ? "#999" : "#fff"}
+            />
+          )}
+        </TouchableOpacity>
       </View>
-    );
-  }
-);
+    </View>
+  );
+});
 
 // Add display name for easier debugging
 MessageInput.displayName = "MessageInput";

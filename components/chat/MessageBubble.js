@@ -1,14 +1,22 @@
 // components/chat/MessageBubble.js
-import React, { memo } from "react";
+import React, { memo, useMemo } from "react";
 import { View, Text, StyleSheet } from "react-native";
+
+const areEqual = (prevProps, nextProps) => {
+  return (
+    prevProps.message.id === nextProps.message.id &&
+    prevProps.message.content === nextProps.message.content &&
+    prevProps.isPartOfContext === nextProps.isPartOfContext
+  );
+};
 
 export const MessageBubble = memo(({ message, isPartOfContext }) => {
   const isUser = message.role === "user";
 
-  // Format timestamp
-  const formatTime = (timestamp) => {
+  // Memoize timestamp formatting
+  const formattedTime = useMemo(() => {
     try {
-      const date = new Date(timestamp);
+      const date = new Date(message.created_at);
       return date.toLocaleTimeString([], {
         hour: "2-digit",
         minute: "2-digit",
@@ -17,7 +25,7 @@ export const MessageBubble = memo(({ message, isPartOfContext }) => {
       console.warn("Error formatting timestamp:", error);
       return "";
     }
-  };
+  }, [message.created_at]);
 
   return (
     <View
@@ -42,7 +50,7 @@ export const MessageBubble = memo(({ message, isPartOfContext }) => {
           {message.content}
         </Text>
 
-        {message.created_at && (
+        {formattedTime && (
           <View style={styles.messageFooter}>
             <Text
               style={[
@@ -50,7 +58,7 @@ export const MessageBubble = memo(({ message, isPartOfContext }) => {
                 isUser ? styles.userTimestamp : styles.assistantTimestamp,
               ]}
             >
-              {formatTime(message.created_at)}
+              {formattedTime}
             </Text>
             {isPartOfContext && <Text style={styles.contextIndicator}>↻</Text>}
           </View>
@@ -58,7 +66,10 @@ export const MessageBubble = memo(({ message, isPartOfContext }) => {
       </View>
     </View>
   );
-});
+}, areEqual);
+
+// Add display name for easier debugging
+MessageBubble.displayName = "MessageBubble";
 
 const styles = StyleSheet.create({
   messageContainer: {

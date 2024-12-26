@@ -13,12 +13,12 @@ import { supabase } from "../lib/supabase";
 import { ChatHeader } from "../components/chat/Header";
 import { MessageBubble } from "../components/chat/MessageBubble";
 import { MessageInput } from "../components/chat/MessageInput";
+import { WelcomeMessages } from "../components/chat/WelcomeMessages";
 import { useConversation } from "../hooks/useConversation";
 import { useConversationPartner } from "../features/ConversationPartner";
 import { sendMessageToAPI, formatMessageHistory } from "../services/api";
 
 const Chat = ({ navigation, route }) => {
-  const [inputText, setInputText] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const flatListRef = useRef();
 
@@ -29,30 +29,10 @@ const Chat = ({ navigation, route }) => {
     contextChain: [],
   });
 
-  const [localMessages, setLocalMessages] = useState([
-    {
-      id: "welcome-message-1",
-      role: "assistant",
-      content:
-        "Hey! 👋 I'm here to help you level up your dating game. Whether you're looking to improve your confidence, conversation skills, or just want to practice flirting in a safe space, I've got you covered!",
-      conversation_id: null,
-      created_at: new Date().toISOString(),
-      context_id: "welcome-context",
-    },
-    {
-      id: "welcome-message-2",
-      role: "assistant",
-      content:
-        "Feel free to roleplay different scenarios like first dates, dating app conversations, or getting someone's number. I'll provide feedback and tips to help you improve. What would you like to practice?",
-      conversation_id: null,
-      created_at: new Date(Date.now() + 100).toISOString(),
-      context_id: "welcome-context",
-    },
-  ]);
-
   const {
     conversation,
     messages,
+    setMessages,
     contextWindow,
     isLoading: conversationLoading,
     error,
@@ -64,7 +44,6 @@ const Chat = ({ navigation, route }) => {
   // Initialize conversation when component mounts
   useEffect(() => {
     const init = async () => {
-      console.log("Initializing conversation...");
       if (!conversation) {
         await initializeConversation(true); // Force new conversation
       }
@@ -72,49 +51,17 @@ const Chat = ({ navigation, route }) => {
     init();
   }, []);
 
-  // Debug logging
-  useEffect(() => {
-    console.log("Conversation state:", conversation);
-  }, [conversation]);
-
-  useEffect(() => {
-    console.log("Local messages:", localMessages);
-  }, [localMessages]);
-
   // Initialize new chat with context tracking
   const initializeNewChat = async () => {
     try {
       // Initialize new conversation in Supabase
       await initializeConversation(true);
 
-      // Reset local messages with welcome messages
-      const welcomeMessages = [
-        {
-          id: "welcome-message-1",
-          role: "assistant",
-          content:
-            "Hey! 👋 I'm here to help you level up your dating game. Whether you're looking to improve your confidence, conversation skills, or just want to practice flirting in a safe space, I've got you covered!",
-          conversation_id: conversation?.id,
-          created_at: new Date().toISOString(),
-          context_id: "welcome-context-new",
-        },
-        {
-          id: "welcome-message-2",
-          role: "assistant",
-          content:
-            "Feel free to roleplay different scenarios like first dates, dating app conversations, or getting someone's number. I'll provide feedback and tips to help you improve. What would you like to practice?",
-          conversation_id: conversation?.id,
-          created_at: new Date(Date.now() + 100).toISOString(),
-          context_id: "welcome-context-new",
-        },
-      ];
-      setLocalMessages(welcomeMessages);
-
       // Reset message context
       setMessageContext({
         lastMessageId: null,
         lastResponseId: null,
-        contextChain: ["welcome-context-new"],
+        contextChain: [],
       });
     } catch (error) {
       console.error("Error initializing new chat:", error);
@@ -125,7 +72,6 @@ const Chat = ({ navigation, route }) => {
   const saveMessageToDatabase = async (content, role, metadata = {}) => {
     try {
       if (!conversation) {
-        console.log("No conversation, initializing...");
         await initializeConversation(true);
       }
 
@@ -165,20 +111,13 @@ const Chat = ({ navigation, route }) => {
     }
   };
 
-  const sendMessage = async () => {
-    console.log("sendMessage called, inputText:", inputText);
-
-    if (!inputText?.trim() || isLoading) {
-      console.log("Send conditions not met:", {
-        hasInput: !!inputText?.trim(),
-        isLoading,
-      });
+  const sendMessage = async (messageText) => {
+    if (!messageText?.trim() || isLoading) {
       return;
     }
 
     // Ensure we have a conversation
     if (!conversation) {
-      console.log("No conversation, initializing...");
       try {
         await initializeConversation(true);
       } catch (error) {
@@ -188,8 +127,7 @@ const Chat = ({ navigation, route }) => {
       }
     }
 
-    const messageContent = inputText.trim();
-    setInputText(""); // Clear input immediately for better UX
+    const messageContent = messageText.trim();
 
     try {
       setIsLoading(true);
@@ -199,11 +137,9 @@ const Chat = ({ navigation, route }) => {
         messageContent,
         "user"
       );
-      console.log("User message saved:", savedUserMessage);
 
-      // Update local messages and context
-      const updatedMessages = [...localMessages, savedUserMessage];
-      setLocalMessages(updatedMessages);
+      // Update messages array with the new user message
+      setMessages((prevMessages) => [...prevMessages, savedUserMessage]);
 
       // Update context tracking
       const newContext = {
@@ -214,11 +150,10 @@ const Chat = ({ navigation, route }) => {
       setMessageContext(newContext);
 
       // Get API response with context
-      console.log("Sending message to API...");
       const { responseText, metadata, success } = await sendMessageToAPI(
         messageContent,
         conversation.model,
-        formatMessageHistory(updatedMessages.slice(-5))
+        formatMessageHistory([...messages, savedUserMessage].slice(-5))
       );
 
       if (!success) {
@@ -250,8 +185,10 @@ const Chat = ({ navigation, route }) => {
         }
       );
 
-      // Update local messages and context with AI response
-      setLocalMessages([...updatedMessages, savedAiMessage]);
+      // Update messages array with the AI response
+      setMessages((prevMessages) => [...prevMessages, savedAiMessage]);
+
+      // Update context with AI response
       setMessageContext({
         ...newContext,
         lastResponseId: savedAiMessage.id,
@@ -267,19 +204,6 @@ const Chat = ({ navigation, route }) => {
       }
     } catch (error) {
       console.error("Error in sendMessage:", error);
-
-      // Add error message to local state with context
-      const errorMessage = {
-        id: "error-" + Date.now(),
-        role: "assistant",
-        content: "I'm having trouble responding right now. Please try again.",
-        conversation_id: conversation?.id,
-        isError: true,
-        created_at: new Date().toISOString(),
-        context_id: messageContext.lastMessageId,
-      };
-
-      setLocalMessages((prev) => [...prev, errorMessage]);
       Alert.alert("Error", "Failed to send message. Please try again.");
     } finally {
       setIsLoading(false);
@@ -296,7 +220,8 @@ const Chat = ({ navigation, route }) => {
       >
         <FlatList
           ref={flatListRef}
-          data={localMessages}
+          ListHeaderComponent={<WelcomeMessages />}
+          data={messages}
           renderItem={({ item }) => (
             <MessageBubble
               message={item}
@@ -316,8 +241,6 @@ const Chat = ({ navigation, route }) => {
         )}
 
         <MessageInput
-          inputText={inputText}
-          setInputText={setInputText}
           sendMessage={sendMessage}
           isLoading={isLoading || conversationLoading}
         />

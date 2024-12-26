@@ -211,6 +211,7 @@ export const useConversation = (supabase, route) => {
     isLoading,
     error,
     sendMessage,
+    setMessages,
     loadMessages,
     updateConversationTimestamp,
     initializeConversation,
