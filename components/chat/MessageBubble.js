@@ -1,17 +1,48 @@
 // components/chat/MessageBubble.js
 import React, { memo, useMemo } from "react";
-import { View, Text, StyleSheet } from "react-native";
+import {
+  View,
+  Text,
+  StyleSheet,
+  TouchableOpacity,
+  Clipboard,
+} from "react-native";
+import { Ionicons } from "@expo/vector-icons";
 
+const ContextIndicator = ({ contextChain }) => {
+  if (!contextChain?.length) return null;
+
+  return (
+    <View style={styles.contextChain}>
+      {contextChain.map((id, index) => (
+        <Text
+          key={id}
+          style={[
+            styles.contextDot,
+            index === contextChain.length - 1 && styles.currentContextDot,
+          ]}
+        >
+          {index === 0 ? "↻" : "•"}
+        </Text>
+      ))}
+    </View>
+  );
+};
+
+// Memoize component comparison
 const areEqual = (prevProps, nextProps) => {
   return (
     prevProps.message.id === nextProps.message.id &&
     prevProps.message.content === nextProps.message.content &&
-    prevProps.isPartOfContext === nextProps.isPartOfContext
+    prevProps.isPartOfContext === nextProps.isPartOfContext &&
+    JSON.stringify(prevProps.message.metadata?.contextChain) ===
+      JSON.stringify(nextProps.message.metadata?.contextChain)
   );
 };
 
 export const MessageBubble = memo(({ message, isPartOfContext }) => {
   const isUser = message.role === "user";
+  const contextChain = message.metadata?.contextChain || [];
 
   // Memoize timestamp formatting
   const formattedTime = useMemo(() => {
@@ -26,6 +57,17 @@ export const MessageBubble = memo(({ message, isPartOfContext }) => {
       return "";
     }
   }, [message.created_at]);
+
+  // Memoize copy handler
+  const handleCopy = useMemo(() => {
+    return async () => {
+      try {
+        await Clipboard.setString(message.content);
+      } catch (error) {
+        console.error("Error copying text:", error);
+      }
+    };
+  }, [message.content]);
 
   return (
     <View
@@ -50,8 +92,8 @@ export const MessageBubble = memo(({ message, isPartOfContext }) => {
           {message.content}
         </Text>
 
-        {formattedTime && (
-          <View style={styles.messageFooter}>
+        <View style={styles.messageFooter}>
+          <View style={styles.footerLeft}>
             <Text
               style={[
                 styles.timestamp,
@@ -60,9 +102,25 @@ export const MessageBubble = memo(({ message, isPartOfContext }) => {
             >
               {formattedTime}
             </Text>
-            {isPartOfContext && <Text style={styles.contextIndicator}>↻</Text>}
+            <ContextIndicator contextChain={contextChain} />
           </View>
-        )}
+
+          {!isUser && (
+            <TouchableOpacity
+              onPress={handleCopy}
+              style={styles.copyButton}
+              hitSlop={{ top: 10, right: 10, bottom: 10, left: 10 }}
+            >
+              <Ionicons
+                name="copy-outline"
+                size={16}
+                color={
+                  isUser ? "rgba(255, 255, 255, 0.7)" : "rgba(0, 0, 0, 0.5)"
+                }
+              />
+            </TouchableOpacity>
+          )}
+        </View>
       </View>
     </View>
   );
@@ -119,9 +177,13 @@ const styles = StyleSheet.create({
   },
   messageFooter: {
     flexDirection: "row",
-    justifyContent: "flex-end",
+    justifyContent: "space-between",
     alignItems: "center",
     marginTop: 2,
+  },
+  footerLeft: {
+    flexDirection: "row",
+    alignItems: "center",
   },
   timestamp: {
     fontSize: 11,
@@ -132,10 +194,22 @@ const styles = StyleSheet.create({
   assistantTimestamp: {
     color: "rgba(0, 0, 0, 0.5)",
   },
-  contextIndicator: {
+  contextChain: {
+    flexDirection: "row",
+    alignItems: "center",
     marginLeft: 4,
+  },
+  contextDot: {
     fontSize: 12,
     color: "rgba(0, 132, 255, 0.7)",
+    marginHorizontal: 2,
+  },
+  currentContextDot: {
+    color: "rgba(0, 132, 255, 1)",
+  },
+  copyButton: {
+    padding: 4,
+    marginLeft: 8,
   },
 });
 

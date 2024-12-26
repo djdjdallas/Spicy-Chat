@@ -37,6 +37,23 @@ const detectModificationRequest = (message) => {
   );
 };
 
+// Enhanced message context handling
+const buildMessageContext = (messages) => {
+  return messages.reduce((context, msg, index) => {
+    const prevMessage = messages[index - 1];
+    return {
+      ...context,
+      [msg.id]: {
+        role: msg.role,
+        content: msg.content,
+        timestamp: msg.created_at,
+        referencesId: prevMessage?.id,
+        contextDepth: index + 1,
+      },
+    };
+  }, {});
+};
+
 export const sendMessageToAPI = async (
   content,
   model,
@@ -48,8 +65,8 @@ export const sendMessageToAPI = async (
       throw new Error("Invalid message content");
     }
 
-    // Get recent context
-    const lastMessages = conversationHistory.slice(-3);
+    // Get enhanced context (last 5 messages instead of 3)
+    const lastMessages = conversationHistory.slice(-5);
     const lastResponse = lastMessages
       .filter((msg) => msg.role === "assistant")
       .pop();
@@ -58,9 +75,19 @@ export const sendMessageToAPI = async (
       .pop();
 
     const isModifyRequest = detectModificationRequest(content);
+    const messageContext = buildMessageContext(lastMessages);
 
-    // Build the prompt with context
-    let enhancedPrompt = content;
+    // Build enhanced prompt with better context
+    let enhancedPrompt = `
+${lastMessages
+  .map((msg) => `${msg.role.toUpperCase()}: ${msg.content}`)
+  .join("\n\n")}
+
+CURRENT REQUEST: ${content}
+
+Please maintain conversation continuity and reference previous context when appropriate.
+`.trim();
+
     if (isModifyRequest && lastResponse) {
       enhancedPrompt = `
 Previous response to modify:
@@ -70,11 +97,11 @@ ${lastResponse.content}
 
 Modification requested: ${content}
 
-Please modify the previous response as requested while maintaining context and relevance.
+Please modify the previous response while maintaining conversation context and relevance.
 `.trim();
     }
 
-    // Structure request with context
+    // Enhanced request body with better context handling
     const requestBody = {
       prompt: enhancedPrompt,
       model: model,
@@ -82,12 +109,16 @@ Please modify the previous response as requested while maintaining context and r
         role: msg.role,
         content: msg.content,
         timestamp: msg.created_at,
+        contextId: msg.id,
+        referencedContext: messageContext[msg.id],
       })),
       metadata: {
         isModificationRequest: isModifyRequest,
         originalRequest: lastUserMessage?.content,
         lastResponse: lastResponse?.content,
         messageChain: conversationHistory.length,
+        contextSize: lastMessages.length,
+        messageContext,
       },
       systemInstructions: {
         useContext: true,
@@ -95,13 +126,16 @@ Please modify the previous response as requested while maintaining context and r
         contextType: isModifyRequest ? "modification" : "continuation",
         modifyExisting: isModifyRequest,
         referenceMessage: isModifyRequest ? lastResponse?.id : null,
+        contextBehavior: "continuous_conversation",
+        contextDepth: lastMessages.length,
       },
     };
 
-    console.log("Sending request with context:", {
+    console.log("Sending enhanced request with context:", {
       isModifyRequest,
       originalContent: content,
       enhancedPrompt,
+      contextSize: lastMessages.length,
       systemInstructions: requestBody.systemInstructions,
     });
 
@@ -137,7 +171,11 @@ Please modify the previous response as requested while maintaining context and r
     }
 
     let responseText = rawText;
-    let metadata = { isModifyRequest };
+    let metadata = {
+      isModifyRequest,
+      contextUsed: lastMessages.length,
+      messageContext,
+    };
 
     const metadataMatch = rawText.match(/<NanoGPT>(.*?)<\/NanoGPT>/);
     if (metadataMatch) {
@@ -204,6 +242,9 @@ export const formatMessageHistory = (messages, limit = 10) => {
         ...msg.metadata,
         isRelevant: true,
         maintainContext: true,
+        contextChain: messages
+          .slice(0, messages.indexOf(msg) + 1)
+          .map((m) => m.id),
       },
     }))
     .filter((msg) => msg.content.trim() !== "");
