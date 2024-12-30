@@ -15,8 +15,38 @@ export const useConversation = (supabase, route) => {
   const [error, setError] = useState(null);
   const [isInitialized, setIsInitialized] = useState(false);
 
+  const loadMessages = async (conversationId) => {
+    try {
+      setIsLoading(true);
+      setError(null);
+      console.log("Loading messages for conversation:", conversationId);
+
+      const { data, error } = await supabase
+        .from("messages")
+        .select("*")
+        .eq("conversation_id", conversationId)
+        .order("created_at", { ascending: true });
+
+      if (error) throw error;
+
+      const validMessages = data || [];
+      console.log(`Loaded ${validMessages.length} messages`);
+      setMessages(validMessages);
+      setContextWindow(validMessages.slice(-5));
+
+      return validMessages;
+    } catch (error) {
+      console.error("Error loading messages:", error);
+      setError(error.message);
+      return [];
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const initializeConversation = async (forceNew = false) => {
-    if (isInitialized && !forceNew) return; // Don't initialize if already done unless forced
+    console.log("Initializing conversation, forceNew:", forceNew);
+    console.log("Current isInitialized:", isInitialized);
 
     try {
       setIsLoading(true);
@@ -30,25 +60,40 @@ export const useConversation = (supabase, route) => {
       if (!user) throw new Error("No authenticated user found");
 
       const conversationId = route.params?.conversationId;
+      console.log("Conversation ID from route params:", conversationId);
+
+      // Handle existing conversation
       if (conversationId && !forceNew) {
+        console.log(
+          "Attempting to load existing conversation:",
+          conversationId
+        );
         const { data: existingConversation, error: conversationError } =
           await supabase
             .from("conversations")
             .select("*")
             .eq("id", conversationId)
-            .eq("user_id", user.id)
             .single();
 
-        if (!conversationError && existingConversation) {
+        if (conversationError) {
+          console.error("Error fetching conversation:", conversationError);
+          throw conversationError;
+        }
+
+        if (existingConversation) {
+          console.log("Found existing conversation:", existingConversation.id);
           setConversation(existingConversation);
-          await loadMessages(conversationId);
-          setIsInitialized(true);
-          return;
+          const loadedMessages = await loadMessages(conversationId);
+          if (loadedMessages.length > 0) {
+            setIsInitialized(true);
+            return;
+          }
         }
       }
 
-      // Only create new conversation if forced or no existing conversation
-      if (forceNew || !conversation) {
+      // Only create new if explicitly forced or no existing conversation found
+      if (forceNew || !conversationId) {
+        console.log("Creating new conversation");
         const { data: newConversation, error: newConversationError } =
           await supabase
             .from("conversations")
@@ -61,6 +106,8 @@ export const useConversation = (supabase, route) => {
             .single();
 
         if (newConversationError) throw newConversationError;
+
+        console.log("Created new conversation:", newConversation.id);
         setConversation(newConversation);
         setMessages([]); // Clear messages for new conversation
         setContextWindow([]); // Clear context window for new conversation
@@ -76,36 +123,18 @@ export const useConversation = (supabase, route) => {
     }
   };
 
-  // Only initialize on first mount if we have a conversationId
+  // Reset and reinitialize when conversation ID changes
   useEffect(() => {
-    if (route.params?.conversationId && !isInitialized) {
-      initializeConversation();
+    const conversationId = route.params?.conversationId;
+    if (conversationId) {
+      console.log("Conversation ID changed:", conversationId);
+      setIsInitialized(false);
+      setConversation(null);
+      setMessages([]);
+      setContextWindow([]);
+      initializeConversation(false);
     }
-  }, []);
-
-  const loadMessages = async (conversationId) => {
-    try {
-      setIsLoading(true);
-      setError(null);
-
-      const { data, error } = await supabase
-        .from("messages")
-        .select("*")
-        .eq("conversation_id", conversationId)
-        .order("created_at", { ascending: true });
-
-      if (error) throw error;
-
-      const validMessages = data || [];
-      setMessages(validMessages);
-      setContextWindow(validMessages.slice(-5));
-    } catch (error) {
-      console.error("Error loading messages:", error);
-      setError(error.message);
-    } finally {
-      setIsLoading(false);
-    }
-  };
+  }, [route.params?.conversationId]);
 
   const sendMessage = useCallback(
     async (content) => {
@@ -114,7 +143,6 @@ export const useConversation = (supabase, route) => {
         return;
       }
 
-      // Initialize conversation if not already done
       if (!conversation) {
         await initializeConversation();
       }
@@ -131,18 +159,20 @@ export const useConversation = (supabase, route) => {
           created_at: new Date().toISOString(),
         };
 
-        const { error: insertError } = await supabase
+        const { data: savedMessage, error: insertError } = await supabase
           .from("messages")
-          .insert(userMessage);
+          .insert(userMessage)
+          .select()
+          .single();
 
         if (insertError) throw insertError;
 
-        // Update local state and context
-        const updatedMessages = [...messages, userMessage];
+        // Update local state with the saved message
+        const updatedMessages = [...messages, savedMessage];
         setMessages(updatedMessages);
 
         // Use current context window plus the new message for API request
-        const currentContext = [...contextWindow, userMessage];
+        const currentContext = [...contextWindow, savedMessage];
         setContextWindow(currentContext);
 
         const { responseText, metadata, success } = await sendMessageToAPI(
@@ -162,14 +192,16 @@ export const useConversation = (supabase, route) => {
           created_at: new Date().toISOString(),
         };
 
-        const { error: aiInsertError } = await supabase
+        const { data: savedAiMessage, error: aiInsertError } = await supabase
           .from("messages")
-          .insert(aiMessage);
+          .insert(aiMessage)
+          .select()
+          .single();
 
         if (aiInsertError) throw aiInsertError;
 
-        // Update messages and context window
-        const finalMessages = [...updatedMessages, aiMessage];
+        // Update messages and context window with saved messages
+        const finalMessages = [...updatedMessages, savedAiMessage];
         setMessages(finalMessages);
         setContextWindow(finalMessages.slice(-5));
 
@@ -195,8 +227,7 @@ export const useConversation = (supabase, route) => {
       const { error } = await supabase
         .from("conversations")
         .update({ last_message_at: new Date().toISOString() })
-        .eq("id", conversation.id)
-        .eq("user_id", conversation.user_id);
+        .eq("id", conversation.id);
 
       if (error) throw error;
     } catch (error) {
@@ -207,13 +238,15 @@ export const useConversation = (supabase, route) => {
   return {
     conversation,
     messages,
+    setMessages,
     contextWindow,
     isLoading,
     error,
     sendMessage,
-    setMessages,
     loadMessages,
     updateConversationTimestamp,
     initializeConversation,
   };
 };
+
+export default useConversation;

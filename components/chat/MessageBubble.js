@@ -159,6 +159,7 @@ const styles = StyleSheet.create({
   assistantBubble: {
     backgroundColor: "#fff",
     borderBottomLeftRadius: 5,
+    marginTop: 5,
   },
   contextualMessage: {
     borderWidth: 1,

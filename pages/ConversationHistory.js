@@ -13,7 +13,7 @@ import { supabase } from "../lib/supabase";
 import { useNavigation } from "@react-navigation/native";
 import { Ionicons } from "@expo/vector-icons";
 
-const ConversationHistory = () => {
+export default function ConversationHistory() {
   const [conversations, setConversations] = useState([]);
   const [loading, setLoading] = useState(true);
   const [isSelectionMode, setIsSelectionMode] = useState(false);
@@ -127,24 +127,50 @@ const ConversationHistory = () => {
           onPress: async () => {
             try {
               setLoading(true);
+              const selectedIds = Array.from(selectedConversations);
 
-              // Delete messages for all selected conversations
-              const { error: messagesError } = await supabase
-                .from("messages")
-                .delete()
-                .in("conversation_id", Array.from(selectedConversations));
+              // First get all message IDs for the selected conversations
+              const { data: messagesData, error: messagesQueryError } =
+                await supabase
+                  .from("messages")
+                  .select("id, conversation_id")
+                  .in("conversation_id", selectedIds);
 
-              if (messagesError) throw messagesError;
+              if (messagesQueryError) throw messagesQueryError;
+              const messageIds = messagesData?.map((msg) => msg.id) || [];
 
-              // Delete the conversations
+              // Delete context_memory entries in batches
+              if (messageIds.length > 0) {
+                const batchSize = 100;
+                for (let i = 0; i < messageIds.length; i += batchSize) {
+                  const batchIds = messageIds.slice(i, i + batchSize);
+                  const { error: contextDeleteError } = await supabase
+                    .from("context_memory")
+                    .delete()
+                    .in("source_message_id", batchIds);
+
+                  if (contextDeleteError) throw contextDeleteError;
+                }
+              }
+
+              // Delete messages for each conversation
+              for (const conversationId of selectedIds) {
+                const { error: messagesError } = await supabase
+                  .from("messages")
+                  .delete()
+                  .eq("conversation_id", conversationId);
+
+                if (messagesError) throw messagesError;
+              }
+
+              // Delete conversations
               const { error: conversationsError } = await supabase
                 .from("conversations")
                 .delete()
-                .in("id", Array.from(selectedConversations));
+                .in("id", selectedIds);
 
               if (conversationsError) throw conversationsError;
 
-              // Update local state
               setConversations((prev) =>
                 prev.filter((conv) => !selectedConversations.has(conv.id))
               );
@@ -157,7 +183,12 @@ const ConversationHistory = () => {
               );
             } catch (error) {
               console.error("Error deleting conversations:", error);
-              Alert.alert("Error", "Failed to delete conversations");
+              Alert.alert(
+                "Error",
+                `Failed to delete conversations: ${
+                  error.message || "Unknown error"
+                }`
+              );
             } finally {
               setLoading(false);
             }
@@ -183,6 +214,31 @@ const ConversationHistory = () => {
             try {
               setLoading(true);
 
+              // First get all message IDs for this conversation
+              const { data: messagesData, error: messagesQueryError } =
+                await supabase
+                  .from("messages")
+                  .select("id")
+                  .eq("conversation_id", conversationId);
+
+              if (messagesQueryError) throw messagesQueryError;
+              const messageIds = messagesData?.map((msg) => msg.id) || [];
+
+              // Delete context_memory entries in batches
+              if (messageIds.length > 0) {
+                const batchSize = 100;
+                for (let i = 0; i < messageIds.length; i += batchSize) {
+                  const batchIds = messageIds.slice(i, i + batchSize);
+                  const { error: contextDeleteError } = await supabase
+                    .from("context_memory")
+                    .delete()
+                    .in("source_message_id", batchIds);
+
+                  if (contextDeleteError) throw contextDeleteError;
+                }
+              }
+
+              // Delete messages
               const { error: messagesError } = await supabase
                 .from("messages")
                 .delete()
@@ -190,6 +246,7 @@ const ConversationHistory = () => {
 
               if (messagesError) throw messagesError;
 
+              // Delete conversation
               const { error: conversationError } = await supabase
                 .from("conversations")
                 .delete()
@@ -204,7 +261,12 @@ const ConversationHistory = () => {
               Alert.alert("Success", "Conversation deleted successfully");
             } catch (error) {
               console.error("Error deleting conversation:", error);
-              Alert.alert("Error", "Failed to delete conversation");
+              Alert.alert(
+                "Error",
+                `Failed to delete conversation: ${
+                  error.message || "Unknown error"
+                }`
+              );
             } finally {
               setLoading(false);
             }
@@ -281,11 +343,13 @@ const ConversationHistory = () => {
                     )}
                   </View>
                 )}
-                <Text style={styles.title}>{item.title}</Text>
-                <Text style={styles.date}>{item.date}</Text>
-                <Text style={styles.preview} numberOfLines={2}>
-                  {item.preview}
-                </Text>
+                <View style={styles.textContent}>
+                  <Text style={styles.title}>{item.title}</Text>
+                  <Text style={styles.date}>{item.date}</Text>
+                  <Text style={styles.preview} numberOfLines={2}>
+                    {item.preview}
+                  </Text>
+                </View>
               </View>
               {!isSelectionMode && (
                 <TouchableOpacity
@@ -303,13 +367,18 @@ const ConversationHistory = () => {
       )}
     </View>
   );
-};
+}
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: "#f5f5f5",
     padding: 15,
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
   },
   header: {
     flexDirection: "row",
@@ -364,11 +433,6 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: "500",
   },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-  },
   conversationItem: {
     backgroundColor: "white",
     padding: 15,
@@ -379,8 +443,6 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.2,
     shadowRadius: 1.41,
-    flexDirection: "row",
-    alignItems: "center",
   },
   selectedItem: {
     backgroundColor: "#e3efff",
@@ -391,6 +453,9 @@ const styles = StyleSheet.create({
     flex: 1,
     flexDirection: "row",
     alignItems: "flex-start",
+  },
+  textContent: {
+    flex: 1,
   },
   checkbox: {
     width: 24,
@@ -409,7 +474,6 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
     color: "#333",
     marginBottom: 5,
-    flex: 1,
   },
   date: {
     fontSize: 14,
@@ -431,5 +495,3 @@ const styles = StyleSheet.create({
     color: "#666",
   },
 });
-
-export default ConversationHistory;

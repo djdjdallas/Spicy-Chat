@@ -21,6 +21,8 @@ import { sendMessageToAPI, formatMessageHistory } from "../services/api";
 const Chat = ({ navigation, route }) => {
   const [isLoading, setIsLoading] = useState(false);
   const flatListRef = useRef();
+  const [listHeight, setListHeight] = useState(0);
+  const [contentHeight, setContentHeight] = useState(0);
 
   // Track message context
   const [messageContext, setMessageContext] = useState({
@@ -50,6 +52,13 @@ const Chat = ({ navigation, route }) => {
     };
     init();
   }, []);
+
+  // Auto-scroll when new messages are added
+  useEffect(() => {
+    if (flatListRef.current && messages.length > 0) {
+      flatListRef.current.scrollToEnd({ animated: true });
+    }
+  }, [messages]);
 
   // Initialize new chat with context tracking
   const initializeNewChat = async () => {
@@ -218,21 +227,41 @@ const Chat = ({ navigation, route }) => {
         style={styles.chatContainer}
         keyboardVerticalOffset={Platform.OS === "ios" ? 90 : 0}
       >
-        <FlatList
-          ref={flatListRef}
-          ListHeaderComponent={<WelcomeMessages />}
-          data={messages}
-          renderItem={({ item }) => (
-            <MessageBubble
-              message={item}
-              isPartOfContext={messageContext.contextChain.includes(item.id)}
-            />
-          )}
-          keyExtractor={(item) => item.id}
-          contentContainerStyle={styles.messageList}
-          onContentSizeChange={() => flatListRef.current?.scrollToEnd()}
-          onLayout={() => flatListRef.current?.scrollToEnd()}
-        />
+        <View
+          style={styles.scrollContainer}
+          onLayout={(event) => {
+            const { height } = event.nativeEvent.layout;
+            setListHeight(height);
+          }}
+        >
+          <FlatList
+            ref={flatListRef}
+            ListHeaderComponent={<WelcomeMessages />}
+            data={messages}
+            renderItem={({ item }) => (
+              <MessageBubble
+                message={item}
+                isPartOfContext={messageContext.contextChain.includes(item.id)}
+              />
+            )}
+            keyExtractor={(item) => item.id}
+            contentContainerStyle={[
+              styles.messageList,
+              { paddingTop: Math.max(0, listHeight - contentHeight) },
+            ]}
+            onContentSizeChange={(width, height) => {
+              setContentHeight(height);
+              if (flatListRef.current) {
+                flatListRef.current.scrollToEnd({ animated: false });
+              }
+            }}
+            onLayout={() => {
+              if (flatListRef.current) {
+                flatListRef.current.scrollToEnd({ animated: false });
+              }
+            }}
+          />
+        </View>
 
         {(isLoading || conversationLoading) && (
           <View style={styles.loadingContainer}>
@@ -257,9 +286,13 @@ const styles = StyleSheet.create({
   chatContainer: {
     flex: 1,
   },
+  scrollContainer: {
+    flex: 1,
+  },
   messageList: {
     padding: 15,
     paddingBottom: 30,
+    flexGrow: 1,
   },
   loadingContainer: {
     padding: 10,
