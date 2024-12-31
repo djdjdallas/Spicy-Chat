@@ -8,8 +8,9 @@ import {
   Clipboard,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import { useTheme } from "../../context/ThemeContext";
 
-const ContextIndicator = ({ contextChain }) => {
+const ContextIndicator = ({ contextChain, theme }) => {
   if (!contextChain?.length) return null;
 
   return (
@@ -19,7 +20,10 @@ const ContextIndicator = ({ contextChain }) => {
           key={id}
           style={[
             styles.contextDot,
-            index === contextChain.length - 1 && styles.currentContextDot,
+            { color: `${theme.colors.primary}70` },
+            index === contextChain.length - 1 && {
+              color: theme.colors.primary,
+            },
           ]}
         >
           {index === 0 ? "↻" : "•"}
@@ -29,7 +33,6 @@ const ContextIndicator = ({ contextChain }) => {
   );
 };
 
-// Memoize component comparison
 const areEqual = (prevProps, nextProps) => {
   return (
     prevProps.message.id === nextProps.message.id &&
@@ -41,10 +44,10 @@ const areEqual = (prevProps, nextProps) => {
 };
 
 export const MessageBubble = memo(({ message, isPartOfContext }) => {
+  const { theme } = useTheme();
   const isUser = message.role === "user";
   const contextChain = message.metadata?.contextChain || [];
 
-  // Memoize timestamp formatting
   const formattedTime = useMemo(() => {
     try {
       const date = new Date(message.created_at);
@@ -58,7 +61,6 @@ export const MessageBubble = memo(({ message, isPartOfContext }) => {
     }
   }, [message.created_at]);
 
-  // Memoize copy handler
   const handleCopy = useMemo(() => {
     return async () => {
       try {
@@ -79,14 +81,25 @@ export const MessageBubble = memo(({ message, isPartOfContext }) => {
       <View
         style={[
           styles.messageBubble,
-          isUser ? styles.userBubble : styles.assistantBubble,
-          isPartOfContext && styles.contextualMessage,
+          isUser
+            ? [styles.userBubble, { backgroundColor: theme.colors.primary }]
+            : [
+                styles.assistantBubble,
+                { backgroundColor: theme.colors.surface },
+              ],
+          isPartOfContext && {
+            borderWidth: 1,
+            borderColor: `${theme.colors.primary}30`,
+          },
+          { shadowColor: theme.colors.shadow },
         ]}
       >
         <Text
           style={[
             styles.messageText,
-            isUser ? styles.userText : styles.assistantText,
+            isUser
+              ? [styles.userText, { color: theme.colors.textInverted }]
+              : [styles.assistantText, { color: theme.colors.textPrimary }],
           ]}
         >
           {message.content}
@@ -97,12 +110,14 @@ export const MessageBubble = memo(({ message, isPartOfContext }) => {
             <Text
               style={[
                 styles.timestamp,
-                isUser ? styles.userTimestamp : styles.assistantTimestamp,
+                isUser
+                  ? { color: `${theme.colors.textInverted}70` }
+                  : { color: theme.colors.textSecondary },
               ]}
             >
               {formattedTime}
             </Text>
-            <ContextIndicator contextChain={contextChain} />
+            <ContextIndicator contextChain={contextChain} theme={theme} />
           </View>
 
           {!isUser && (
@@ -115,7 +130,9 @@ export const MessageBubble = memo(({ message, isPartOfContext }) => {
                 name="copy-outline"
                 size={16}
                 color={
-                  isUser ? "rgba(255, 255, 255, 0.7)" : "rgba(0, 0, 0, 0.5)"
+                  isUser
+                    ? `${theme.colors.textInverted}70`
+                    : theme.colors.textSecondary
                 }
               />
             </TouchableOpacity>
@@ -126,7 +143,6 @@ export const MessageBubble = memo(({ message, isPartOfContext }) => {
   );
 }, areEqual);
 
-// Add display name for easier debugging
 MessageBubble.displayName = "MessageBubble";
 
 const styles = StyleSheet.create({
@@ -147,34 +163,21 @@ const styles = StyleSheet.create({
     padding: 12,
     borderRadius: 20,
     elevation: 1,
-    shadowColor: "#000",
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.2,
     shadowRadius: 1.41,
   },
   userBubble: {
-    backgroundColor: "#0084ff",
     borderBottomRightRadius: 5,
   },
   assistantBubble: {
-    backgroundColor: "#fff",
     borderBottomLeftRadius: 5,
     marginTop: 5,
-  },
-  contextualMessage: {
-    borderWidth: 1,
-    borderColor: "rgba(0, 132, 255, 0.3)",
   },
   messageText: {
     fontSize: 16,
     lineHeight: 20,
     marginBottom: 4,
-  },
-  userText: {
-    color: "#fff",
-  },
-  assistantText: {
-    color: "#333",
   },
   messageFooter: {
     flexDirection: "row",
@@ -189,12 +192,6 @@ const styles = StyleSheet.create({
   timestamp: {
     fontSize: 11,
   },
-  userTimestamp: {
-    color: "rgba(255, 255, 255, 0.7)",
-  },
-  assistantTimestamp: {
-    color: "rgba(0, 0, 0, 0.5)",
-  },
   contextChain: {
     flexDirection: "row",
     alignItems: "center",
@@ -202,11 +199,7 @@ const styles = StyleSheet.create({
   },
   contextDot: {
     fontSize: 12,
-    color: "rgba(0, 132, 255, 0.7)",
     marginHorizontal: 2,
-  },
-  currentContextDot: {
-    color: "rgba(0, 132, 255, 1)",
   },
   copyButton: {
     padding: 4,

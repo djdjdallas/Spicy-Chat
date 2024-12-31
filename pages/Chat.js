@@ -17,8 +17,10 @@ import { WelcomeMessages } from "../components/chat/WelcomeMessages";
 import { useConversation } from "../hooks/useConversation";
 import { useConversationPartner } from "../features/ConversationPartner";
 import { sendMessageToAPI, formatMessageHistory } from "../services/api";
+import { useTheme } from "../context/ThemeContext";
 
 const Chat = ({ navigation, route }) => {
+  const { theme } = useTheme();
   const [isLoading, setIsLoading] = useState(false);
   const flatListRef = useRef();
   const [listHeight, setListHeight] = useState(0);
@@ -220,15 +222,20 @@ const Chat = ({ navigation, route }) => {
   };
 
   return (
-    <View style={styles.container}>
-      <ChatHeader onNewChat={initializeNewChat} />
+    <View
+      style={[styles.container, { backgroundColor: theme.colors.background }]}
+    >
+      <ChatHeader onNewChat={initializeNewChat} theme={theme} />
       <KeyboardAvoidingView
         behavior={Platform.OS === "ios" ? "padding" : "height"}
         style={styles.chatContainer}
         keyboardVerticalOffset={Platform.OS === "ios" ? 90 : 0}
       >
         <View
-          style={styles.scrollContainer}
+          style={[
+            styles.scrollContainer,
+            { backgroundColor: theme.colors.background },
+          ]}
           onLayout={(event) => {
             const { height } = event.nativeEvent.layout;
             setListHeight(height);
@@ -236,18 +243,22 @@ const Chat = ({ navigation, route }) => {
         >
           <FlatList
             ref={flatListRef}
-            ListHeaderComponent={<WelcomeMessages />}
+            ListHeaderComponent={<WelcomeMessages theme={theme} />}
             data={messages}
             renderItem={({ item }) => (
               <MessageBubble
                 message={item}
                 isPartOfContext={messageContext.contextChain.includes(item.id)}
+                theme={theme}
               />
             )}
             keyExtractor={(item) => item.id}
             contentContainerStyle={[
               styles.messageList,
-              { paddingTop: Math.max(0, listHeight - contentHeight) },
+              {
+                paddingTop: Math.max(0, listHeight - contentHeight),
+                backgroundColor: theme.colors.background,
+              },
             ]}
             onContentSizeChange={(width, height) => {
               setContentHeight(height);
@@ -264,14 +275,20 @@ const Chat = ({ navigation, route }) => {
         </View>
 
         {(isLoading || conversationLoading) && (
-          <View style={styles.loadingContainer}>
-            <ActivityIndicator size="large" color="#0084ff" />
+          <View
+            style={[
+              styles.loadingContainer,
+              { backgroundColor: theme.colors.background },
+            ]}
+          >
+            <ActivityIndicator size="large" color={theme.colors.primary} />
           </View>
         )}
 
         <MessageInput
           sendMessage={sendMessage}
           isLoading={isLoading || conversationLoading}
+          theme={theme}
         />
       </KeyboardAvoidingView>
     </View>
@@ -281,7 +298,6 @@ const Chat = ({ navigation, route }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#f5f5f5",
   },
   chatContainer: {
     flex: 1,

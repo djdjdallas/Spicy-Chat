@@ -7,7 +7,7 @@ import {
   Alert,
   Platform,
 } from "react-native";
-import { DrawerContentScrollView, DrawerItem } from "@react-navigation/drawer";
+import { DrawerContentScrollView } from "@react-navigation/drawer";
 import {
   Text,
   Title,
@@ -18,8 +18,9 @@ import {
 } from "react-native-paper";
 import { Ionicons } from "@expo/vector-icons";
 import { supabase } from "../lib/supabase";
+import { useTheme } from "../context/ThemeContext";
 
-const UserAvatar = ({ user }) => {
+const UserAvatar = ({ user, theme }) => {
   const getInitials = () => {
     if (user?.user_metadata?.full_name) {
       return user.user_metadata.full_name
@@ -32,15 +33,28 @@ const UserAvatar = ({ user }) => {
   };
 
   return (
-    <View style={styles.avatar}>
+    <View style={[styles.avatar, { backgroundColor: theme.colors.primary }]}>
       <Text style={styles.avatarText}>{getInitials()}</Text>
     </View>
   );
 };
 
+const DrawerItem = ({ label, icon: Icon, onPress, theme }) => (
+  <TouchableRipple onPress={onPress} style={styles.drawerItem}>
+    <View style={styles.drawerItemContent}>
+      <Icon color={theme.colors.textPrimary} size={24} />
+      <Text
+        style={[styles.drawerItemLabel, { color: theme.colors.textPrimary }]}
+      >
+        {label}
+      </Text>
+    </View>
+  </TouchableRipple>
+);
+
 export default function DrawerContent(props) {
   const [user, setUser] = useState(null);
-  const [isDarkTheme, setIsDarkTheme] = useState(false);
+  const { isDark, toggleTheme, theme } = useTheme();
 
   useEffect(() => {
     loadUserProfile();
@@ -56,7 +70,6 @@ export default function DrawerContent(props) {
       setUser(user);
 
       if (user) {
-        // Load additional profile data if needed
         const { data: profile, error: profileError } = await supabase
           .from("profiles")
           .select("*")
@@ -64,7 +77,6 @@ export default function DrawerContent(props) {
           .single();
 
         if (profileError && profileError.code !== "PGRST116") {
-          // PGRST116 is 'not found'
           throw profileError;
         }
 
@@ -77,7 +89,7 @@ export default function DrawerContent(props) {
     }
   };
 
-  const handleSignOut = async () => {
+  const handleSignOut = () => {
     Alert.alert(
       "Sign Out",
       "Are you sure you want to sign out?",
@@ -93,9 +105,6 @@ export default function DrawerContent(props) {
             try {
               const { error } = await supabase.auth.signOut();
               if (error) throw error;
-
-              // Navigation will be handled automatically by the auth state listener
-              // in App.js, no need to navigate manually
             } catch (error) {
               console.error("Error signing out:", error);
               Alert.alert("Error", "Failed to sign out. Please try again.");
@@ -107,26 +116,40 @@ export default function DrawerContent(props) {
     );
   };
 
-  const toggleTheme = () => {
-    setIsDarkTheme(!isDarkTheme);
-    // Add your theme switching logic here
-  };
-
   return (
-    <DrawerContentScrollView {...props}>
-      <View style={styles.drawerContent}>
+    <DrawerContentScrollView
+      {...props}
+      style={{ backgroundColor: theme.colors.background }}
+    >
+      <View
+        style={[
+          styles.drawerContent,
+          { backgroundColor: theme.colors.background },
+        ]}
+      >
         {/* User Info Section */}
-        <View style={styles.userInfoSection}>
+        <View
+          style={[
+            styles.userInfoSection,
+            { borderBottomColor: theme.colors.border },
+          ]}
+        >
           <TouchableOpacity
             style={styles.profileSection}
             onPress={() => props.navigation.navigate("Profile")}
           >
-            <UserAvatar user={user} />
+            <UserAvatar user={user} theme={theme} />
             <View style={styles.userInfo}>
-              <Title style={styles.title}>
+              <Title
+                style={[styles.title, { color: theme.colors.textPrimary }]}
+              >
                 {user?.user_metadata?.full_name || "User"}
               </Title>
-              <Caption style={styles.caption}>{user?.email}</Caption>
+              <Caption
+                style={[styles.caption, { color: theme.colors.textSecondary }]}
+              >
+                {user?.email}
+              </Caption>
             </View>
           </TouchableOpacity>
         </View>
@@ -134,75 +157,85 @@ export default function DrawerContent(props) {
         {/* Navigation Items */}
         <Drawer.Section style={styles.drawerSection}>
           <DrawerItem
-            icon={({ color, size }) => (
-              <Ionicons name="chatbubble-outline" color={color} size={size} />
-            )}
             label="Chat"
+            icon={(props) => <Ionicons name="chatbubble-outline" {...props} />}
             onPress={() => props.navigation.navigate("Chat")}
+            theme={theme}
           />
           <DrawerItem
-            icon={({ color, size }) => (
-              <Ionicons name="people-outline" color={color} size={size} />
-            )}
             label="Conversation Partners"
+            icon={(props) => <Ionicons name="people-outline" {...props} />}
             onPress={() => props.navigation.navigate("Partners")}
+            theme={theme}
           />
           <DrawerItem
-            icon={({ color, size }) => (
-              <Ionicons name="person-outline" color={color} size={size} />
-            )}
             label="Profile"
+            icon={(props) => <Ionicons name="person-outline" {...props} />}
             onPress={() => props.navigation.navigate("Profile")}
+            theme={theme}
           />
           <DrawerItem
-            icon={({ color, size }) => (
-              <Ionicons name="time-outline" color={color} size={size} />
-            )}
             label="Conversation History"
+            icon={(props) => <Ionicons name="time-outline" {...props} />}
             onPress={() => props.navigation.navigate("ConversationHistory")}
+            theme={theme}
           />
           <DrawerItem
-            icon={({ color, size }) => (
-              <Ionicons name="bulb-outline" color={color} size={size} />
-            )}
             label="Tips & Tricks"
+            icon={(props) => <Ionicons name="bulb-outline" {...props} />}
             onPress={() => props.navigation.navigate("Tips")}
+            theme={theme}
           />
           <DrawerItem
-            icon={({ color, size }) => (
-              <Ionicons name="settings-outline" color={color} size={size} />
-            )}
             label="Settings"
+            icon={(props) => <Ionicons name="settings-outline" {...props} />}
             onPress={() => props.navigation.navigate("Settings")}
+            theme={theme}
           />
         </Drawer.Section>
 
         {/* Preferences Section */}
-        <Drawer.Section title="Preferences">
+        <Drawer.Section title="Preferences" theme={theme}>
           <TouchableRipple onPress={toggleTheme}>
             <View style={styles.preference}>
-              <Text>Dark Theme</Text>
+              <Text style={{ color: theme.colors.textPrimary }}>
+                Dark Theme
+              </Text>
               <View pointerEvents="none">
-                <Switch value={isDarkTheme} />
+                <Switch value={isDark} />
               </View>
             </View>
           </TouchableRipple>
         </Drawer.Section>
 
         {/* Sign Out Section */}
-        <Drawer.Section style={styles.bottomDrawerSection}>
+        <Drawer.Section
+          style={[
+            styles.bottomDrawerSection,
+            { borderTopColor: theme.colors.border },
+          ]}
+        >
           <DrawerItem
-            icon={({ color, size }) => (
-              <Ionicons name="log-out-outline" color={color} size={size} />
-            )}
             label="Sign Out"
+            icon={(props) => (
+              <Ionicons
+                name="log-out-outline"
+                {...props}
+                color={theme.colors.error}
+              />
+            )}
             onPress={handleSignOut}
+            theme={theme}
           />
         </Drawer.Section>
 
         {/* Version Info */}
-        <View style={styles.versionInfo}>
-          <Caption>Version 1.0.0</Caption>
+        <View
+          style={[styles.versionInfo, { borderTopColor: theme.colors.border }]}
+        >
+          <Caption style={{ color: theme.colors.textSecondary }}>
+            Version 1.0.0
+          </Caption>
         </View>
       </View>
     </DrawerContentScrollView>
@@ -219,7 +252,6 @@ const styles = StyleSheet.create({
     paddingTop: 20,
     paddingBottom: 10,
     borderBottomWidth: 1,
-    borderBottomColor: "#f4f4f4",
   },
   profileSection: {
     flexDirection: "row",
@@ -230,7 +262,6 @@ const styles = StyleSheet.create({
     width: 80,
     height: 80,
     borderRadius: 40,
-    backgroundColor: "#0084ff",
     justifyContent: "center",
     alignItems: "center",
   },
@@ -255,9 +286,20 @@ const styles = StyleSheet.create({
   drawerSection: {
     marginTop: 15,
   },
+  drawerItem: {
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+  },
+  drawerItemContent: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  drawerItemLabel: {
+    marginLeft: 32,
+    fontSize: 16,
+  },
   bottomDrawerSection: {
     marginTop: 15,
-    borderTopColor: "#f4f4f4",
     borderTopWidth: 1,
   },
   preference: {
@@ -270,6 +312,5 @@ const styles = StyleSheet.create({
     padding: 20,
     alignItems: "center",
     borderTopWidth: 1,
-    borderTopColor: "#f4f4f4",
   },
 });

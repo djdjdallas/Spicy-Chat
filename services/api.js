@@ -1,8 +1,7 @@
 // services/api.js
 import { Alert } from "react-native";
+import { API_KEY, API_URL } from "@env";
 
-const API_KEY = "91b130c4-10bb-4e29-b66a-7e44359326a3";
-const API_URL = "https://nano-gpt.com/api/talk-to-gpt";
 const MAX_RETRIES = 3;
 const RETRY_DELAY = 1000;
 
@@ -11,6 +10,45 @@ const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 const isValidResponse = (text) => {
   if (!text || typeof text !== "string") return false;
   return text.length > 0 && text.length < 10000;
+};
+
+// Detect text creation requests
+const detectTextCreationRequest = (message) => {
+  const creationPhrases = [
+    "write",
+    "create",
+    "compose",
+    "draft",
+    "generate",
+    "make",
+    "help me write",
+    "craft",
+    "author",
+    "formulate",
+  ];
+
+  const contentTypes = [
+    "text",
+    "message",
+    "email",
+    "letter",
+    "post",
+    "story",
+    "essay",
+    "article",
+    "bio",
+    "description",
+    "response",
+    "reply",
+  ];
+
+  const normalizedMessage = message.toLowerCase().trim();
+
+  return creationPhrases.some(
+    (phrase) =>
+      normalizedMessage.includes(phrase) &&
+      contentTypes.some((type) => normalizedMessage.includes(type))
+  );
 };
 
 const detectModificationRequest = (message) => {
@@ -37,7 +75,6 @@ const detectModificationRequest = (message) => {
   );
 };
 
-// Enhanced message context handling
 const buildMessageContext = (messages) => {
   return messages.reduce((context, msg, index) => {
     const prevMessage = messages[index - 1];
@@ -65,7 +102,6 @@ export const sendMessageToAPI = async (
       throw new Error("Invalid message content");
     }
 
-    // Get enhanced context (last 5 messages instead of 3)
     const lastMessages = conversationHistory.slice(-5);
     const lastResponse = lastMessages
       .filter((msg) => msg.role === "assistant")
@@ -75,20 +111,42 @@ export const sendMessageToAPI = async (
       .pop();
 
     const isModifyRequest = detectModificationRequest(content);
+    const isTextCreationRequest = detectTextCreationRequest(content);
     const messageContext = buildMessageContext(lastMessages);
 
-    // Build enhanced prompt with better context
-    let enhancedPrompt = `
+    // Build enhanced prompt based on request type
+    let enhancedPrompt = "";
+    let systemInstructions = {
+      useContext: true,
+      maintainContext: true,
+      contextType: isModifyRequest ? "modification" : "continuation",
+      modifyExisting: isModifyRequest,
+      referenceMessage: isModifyRequest ? lastResponse?.id : null,
+      contextBehavior: "continuous_conversation",
+      contextDepth: lastMessages.length,
+    };
+
+    if (isTextCreationRequest) {
+      enhancedPrompt = `
+I will help you create the text you requested. I'll write it in first person as if I were you.
+
+PREVIOUS CONTEXT:
 ${lastMessages
   .map((msg) => `${msg.role.toUpperCase()}: ${msg.content}`)
   .join("\n\n")}
 
-CURRENT REQUEST: ${content}
+YOUR REQUEST: ${content}
 
-Please maintain conversation continuity and reference previous context when appropriate.
+I'll compose this in first person, naturally incorporating your voice and style.
 `.trim();
 
-    if (isModifyRequest && lastResponse) {
+      systemInstructions = {
+        ...systemInstructions,
+        responseStyle: "first_person",
+        creativeWriting: true,
+        userVoice: true,
+      };
+    } else if (isModifyRequest && lastResponse) {
       enhancedPrompt = `
 Previous response to modify:
 """
@@ -99,9 +157,18 @@ Modification requested: ${content}
 
 Please modify the previous response while maintaining conversation context and relevance.
 `.trim();
+    } else {
+      enhancedPrompt = `
+${lastMessages
+  .map((msg) => `${msg.role.toUpperCase()}: ${msg.content}`)
+  .join("\n\n")}
+
+CURRENT REQUEST: ${content}
+
+Please maintain conversation continuity and reference previous context when appropriate.
+`.trim();
     }
 
-    // Enhanced request body with better context handling
     const requestBody = {
       prompt: enhancedPrompt,
       model: model,
@@ -114,31 +181,17 @@ Please modify the previous response while maintaining conversation context and r
       })),
       metadata: {
         isModificationRequest: isModifyRequest,
+        isTextCreationRequest,
         originalRequest: lastUserMessage?.content,
         lastResponse: lastResponse?.content,
         messageChain: conversationHistory.length,
         contextSize: lastMessages.length,
         messageContext,
       },
-      systemInstructions: {
-        useContext: true,
-        maintainContext: true,
-        contextType: isModifyRequest ? "modification" : "continuation",
-        modifyExisting: isModifyRequest,
-        referenceMessage: isModifyRequest ? lastResponse?.id : null,
-        contextBehavior: "continuous_conversation",
-        contextDepth: lastMessages.length,
-      },
+      systemInstructions,
     };
 
-    console.log("Sending enhanced request with context:", {
-      isModifyRequest,
-      originalContent: content,
-      enhancedPrompt,
-      contextSize: lastMessages.length,
-      systemInstructions: requestBody.systemInstructions,
-    });
-
+    // Rest of the API call logic remains the same...
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 30000);
 
@@ -173,6 +226,7 @@ Please modify the previous response while maintaining conversation context and r
     let responseText = rawText;
     let metadata = {
       isModifyRequest,
+      isTextCreationRequest,
       contextUsed: lastMessages.length,
       messageContext,
     };
@@ -194,6 +248,7 @@ Please modify the previous response while maintaining conversation context and r
       success: true,
     };
   } catch (error) {
+    // Error handling remains the same...
     console.error("Error in sendMessageToAPI:", {
       error: error.message,
       retryCount,
