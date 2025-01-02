@@ -1,10 +1,10 @@
-// hooks/useConversation.js
 import { useState, useEffect, useCallback } from "react";
 import { Alert } from "react-native";
 import {
   sendMessageToAPI,
   validateMessage,
   formatMessageHistory,
+  FREE_MESSAGE_LIMIT,
 } from "../services/api";
 
 export const useConversation = (supabase, route) => {
@@ -14,6 +14,42 @@ export const useConversation = (supabase, route) => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
   const [isInitialized, setIsInitialized] = useState(false);
+  const [messageCount, setMessageCount] = useState(0);
+  const [isSubscribed, setIsSubscribed] = useState(false);
+
+  useEffect(() => {
+    const checkSubscription = async () => {
+      try {
+        const {
+          data: { user },
+          error: userError,
+        } = await supabase.auth.getUser();
+        if (userError) throw userError;
+
+        // Changed from .single() to just getting all matches
+        const { data, error } = await supabase
+          .from("subscriptions")
+          .select("status")
+          .eq("user_id", user.id);
+
+        if (error) {
+          console.error("Error checking subscription:", error);
+          setIsSubscribed(false); // Default to not subscribed on error
+        } else {
+          // Check if there are any active subscriptions
+          const hasActiveSubscription = data?.some(
+            (sub) => sub.status === "active"
+          );
+          setIsSubscribed(hasActiveSubscription);
+        }
+      } catch (error) {
+        console.error("Error checking subscription:", error);
+        setIsSubscribed(false); // Default to not subscribed on error
+      }
+    };
+
+    checkSubscription();
+  }, []);
 
   const loadMessages = async (conversationId) => {
     try {
@@ -123,7 +159,6 @@ export const useConversation = (supabase, route) => {
     }
   };
 
-  // Reset and reinitialize when conversation ID changes
   useEffect(() => {
     const conversationId = route.params?.conversationId;
     if (conversationId) {
@@ -138,6 +173,26 @@ export const useConversation = (supabase, route) => {
 
   const sendMessage = useCallback(
     async (content) => {
+      if (!isSubscribed && messageCount >= FREE_MESSAGE_LIMIT) {
+        Alert.alert(
+          "Message Limit Reached",
+          "You have reached the maximum number of messages for free accounts. Please subscribe to continue.",
+          [
+            {
+              text: "Subscribe",
+              onPress: () => {
+                // Navigate to subscription page
+              },
+            },
+            {
+              text: "Cancel",
+              style: "cancel",
+            },
+          ]
+        );
+        return;
+      }
+
       if (!validateMessage(content)) {
         Alert.alert("Error", "Invalid message content");
         return;
@@ -207,6 +262,8 @@ export const useConversation = (supabase, route) => {
 
         await updateConversationTimestamp();
 
+        setMessageCount((prevCount) => prevCount + 1);
+
         return { success: true };
       } catch (error) {
         console.error("Error sending message:", error);
@@ -217,7 +274,7 @@ export const useConversation = (supabase, route) => {
         setIsLoading(false);
       }
     },
-    [conversation, messages, contextWindow]
+    [conversation, messages, contextWindow, isSubscribed, messageCount]
   );
 
   const updateConversationTimestamp = async () => {

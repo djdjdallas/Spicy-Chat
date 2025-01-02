@@ -1,7 +1,7 @@
 // services/api.js
 import { Alert } from "react-native";
 import { API_KEY, API_URL } from "@env";
-
+export const FREE_MESSAGE_LIMIT = 10;
 const MAX_RETRIES = 3;
 const RETRY_DELAY = 1000;
 

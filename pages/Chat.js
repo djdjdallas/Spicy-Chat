@@ -1,4 +1,4 @@
-// pages/Chat.js
+// Chat.js
 import React, { useState, useRef, useEffect } from "react";
 import {
   View,
@@ -26,6 +26,12 @@ const Chat = ({ navigation, route }) => {
   const [listHeight, setListHeight] = useState(0);
   const [contentHeight, setContentHeight] = useState(0);
 
+  // Get partner info from route params
+  const partnerName = route.params?.partnerName || "Assistant";
+  const partnerId = route.params?.partnerId;
+  const partnerStyle = route.params?.partnerStyle;
+  const partnerGoals = route.params?.partnerGoals;
+
   // Track message context
   const [messageContext, setMessageContext] = useState({
     lastMessageId: null,
@@ -49,7 +55,7 @@ const Chat = ({ navigation, route }) => {
   useEffect(() => {
     const init = async () => {
       if (!conversation) {
-        await initializeConversation(true); // Force new conversation
+        await initializeConversation(true);
       }
     };
     init();
@@ -65,10 +71,7 @@ const Chat = ({ navigation, route }) => {
   // Initialize new chat with context tracking
   const initializeNewChat = async () => {
     try {
-      // Initialize new conversation in Supabase
       await initializeConversation(true);
-
-      // Reset message context
       setMessageContext({
         lastMessageId: null,
         lastResponseId: null,
@@ -95,6 +98,11 @@ const Chat = ({ navigation, route }) => {
           ...metadata,
           context_id: messageContext.lastMessageId,
           context_chain: messageContext.contextChain,
+          partnerName: partnerName,
+          partnerId: partnerId,
+          partnerStyle: partnerStyle,
+          partnerGoals: partnerGoals,
+          isPartnerMessage: role !== "user",
         },
       };
 
@@ -127,42 +135,18 @@ const Chat = ({ navigation, route }) => {
       return;
     }
 
-    // Ensure we have a conversation
-    if (!conversation) {
-      try {
-        await initializeConversation(true);
-      } catch (error) {
-        console.error("Failed to initialize conversation:", error);
-        Alert.alert("Error", "Failed to start conversation. Please try again.");
-        return;
-      }
-    }
-
-    const messageContent = messageText.trim();
-
     try {
       setIsLoading(true);
 
       // Save user message with context
-      const savedUserMessage = await saveMessageToDatabase(
-        messageContent,
-        "user"
-      );
+      const savedUserMessage = await saveMessageToDatabase(messageText, "user");
 
       // Update messages array with the new user message
       setMessages((prevMessages) => [...prevMessages, savedUserMessage]);
 
-      // Update context tracking
-      const newContext = {
-        lastMessageId: savedUserMessage.id,
-        lastResponseId: messageContext.lastResponseId,
-        contextChain: [...messageContext.contextChain, savedUserMessage.id],
-      };
-      setMessageContext(newContext);
-
       // Get API response with context
       const { responseText, metadata, success } = await sendMessageToAPI(
-        messageContent,
+        messageText,
         conversation.model,
         formatMessageHistory([...messages, savedUserMessage].slice(-5))
       );
@@ -173,11 +157,8 @@ const Chat = ({ navigation, route }) => {
 
       // Get interaction feedback if partner exists
       let feedbackMetadata = {};
-      if (currentPartner) {
-        const feedback = getInteractionFeedback(
-          messageContent,
-          currentPartner.id
-        );
+      if (partnerId) {
+        const feedback = getInteractionFeedback(messageText, partnerId);
         feedbackMetadata = {
           ...metadata,
           feedback,
@@ -185,25 +166,36 @@ const Chat = ({ navigation, route }) => {
         };
       }
 
-      // Save AI response with enhanced context
+      // Save AI response with partner information
       const savedAiMessage = await saveMessageToDatabase(
         responseText,
         "assistant",
         {
           ...feedbackMetadata,
           reference_message_id: savedUserMessage.id,
-          context_chain: newContext.contextChain,
+          context_chain: [...messageContext.contextChain, savedUserMessage.id],
+          isPartnerMessage: true,
+          partnerName: partnerName,
         }
       );
 
-      // Update messages array with the AI response
-      setMessages((prevMessages) => [...prevMessages, savedAiMessage]);
+      // Add AI response to the UI
+      setMessages((prevMessages) => {
+        const uniqueMessages = prevMessages.filter(
+          (msg) => msg.id !== savedAiMessage.id
+        );
+        return [...uniqueMessages, savedAiMessage];
+      });
 
-      // Update context with AI response
+      // Update context
       setMessageContext({
-        ...newContext,
+        lastMessageId: savedUserMessage.id,
         lastResponseId: savedAiMessage.id,
-        contextChain: [...newContext.contextChain, savedAiMessage.id],
+        contextChain: [
+          ...messageContext.contextChain,
+          savedUserMessage.id,
+          savedAiMessage.id,
+        ],
       });
 
       // Scroll to bottom
@@ -229,7 +221,7 @@ const Chat = ({ navigation, route }) => {
       <KeyboardAvoidingView
         behavior={Platform.OS === "ios" ? "padding" : "height"}
         style={styles.chatContainer}
-        keyboardVerticalOffset={Platform.OS === "ios" ? 90 : 0}
+        keyboardVerticalOffset={Platform.OS === "ios" ? 5 : 0}
       >
         <View
           style={[
@@ -243,13 +235,16 @@ const Chat = ({ navigation, route }) => {
         >
           <FlatList
             ref={flatListRef}
-            ListHeaderComponent={<WelcomeMessages theme={theme} />}
+            ListHeaderComponent={
+              <WelcomeMessages theme={theme} partnerName={partnerName} />
+            }
             data={messages}
             renderItem={({ item }) => (
               <MessageBubble
                 message={item}
                 isPartOfContext={messageContext.contextChain.includes(item.id)}
                 theme={theme}
+                senderName={item.role === "user" ? "You" : partnerName}
               />
             )}
             keyExtractor={(item) => item.id}
@@ -304,10 +299,11 @@ const styles = StyleSheet.create({
   },
   scrollContainer: {
     flex: 1,
+    marginBottom: Platform.OS === "ios" ? 0 : 60,
   },
   messageList: {
     padding: 15,
-    paddingBottom: 30,
+    paddingBottom: 70,
     flexGrow: 1,
   },
   loadingContainer: {

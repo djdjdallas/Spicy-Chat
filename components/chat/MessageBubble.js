@@ -38,89 +38,106 @@ const areEqual = (prevProps, nextProps) => {
     prevProps.message.id === nextProps.message.id &&
     prevProps.message.content === nextProps.message.content &&
     prevProps.isPartOfContext === nextProps.isPartOfContext &&
+    prevProps.senderName === nextProps.senderName &&
     JSON.stringify(prevProps.message.metadata?.contextChain) ===
       JSON.stringify(nextProps.message.metadata?.contextChain)
   );
 };
 
-export const MessageBubble = memo(({ message, isPartOfContext }) => {
-  const { theme } = useTheme();
-  const isUser = message.role === "user";
-  const contextChain = message.metadata?.contextChain || [];
+export const MessageBubble = memo(
+  ({ message, isPartOfContext, senderName }) => {
+    const { theme } = useTheme();
+    const contextChain = message.metadata?.contextChain || [];
+    const isUser = message.role === "user";
 
-  const formattedTime = useMemo(() => {
-    try {
-      const date = new Date(message.created_at);
-      return date.toLocaleTimeString([], {
-        hour: "2-digit",
-        minute: "2-digit",
-      });
-    } catch (error) {
-      console.warn("Error formatting timestamp:", error);
-      return "";
-    }
-  }, [message.created_at]);
-
-  const handleCopy = useMemo(() => {
-    return async () => {
+    const formattedTime = useMemo(() => {
       try {
-        await Clipboard.setString(message.content);
+        const date = new Date(message.created_at);
+        return date.toLocaleTimeString([], {
+          hour: "2-digit",
+          minute: "2-digit",
+        });
       } catch (error) {
-        console.error("Error copying text:", error);
+        console.warn("Error formatting timestamp:", error);
+        return "";
       }
-    };
-  }, [message.content]);
+    }, [message.created_at]);
 
-  return (
-    <View
-      style={[
-        styles.messageContainer,
-        isUser ? styles.userMessageContainer : styles.assistantMessageContainer,
-      ]}
-    >
+    const handleCopy = useMemo(() => {
+      return async () => {
+        try {
+          await Clipboard.setString(message.content);
+        } catch (error) {
+          console.error("Error copying text:", error);
+        }
+      };
+    }, [message.content]);
+
+    return (
       <View
         style={[
-          styles.messageBubble,
+          styles.messageContainer,
           isUser
-            ? [styles.userBubble, { backgroundColor: theme.colors.primary }]
-            : [
-                styles.assistantBubble,
-                { backgroundColor: theme.colors.surface },
-              ],
-          isPartOfContext && {
-            borderWidth: 1,
-            borderColor: `${theme.colors.primary}30`,
-          },
-          { shadowColor: theme.colors.shadow },
+            ? styles.userMessageContainer
+            : styles.assistantMessageContainer,
         ]}
       >
         <Text
           style={[
-            styles.messageText,
-            isUser
-              ? [styles.userText, { color: theme.colors.textInverted }]
-              : [styles.assistantText, { color: theme.colors.textPrimary }],
+            styles.partnerName,
+            isUser ? styles.userLabel : styles.assistantLabel,
+            { color: isUser ? theme.colors.primary : theme.colors.primary },
           ]}
         >
-          {message.content}
+          {senderName}
         </Text>
 
-        <View style={styles.messageFooter}>
-          <View style={styles.footerLeft}>
-            <Text
-              style={[
-                styles.timestamp,
-                isUser
-                  ? { color: `${theme.colors.textInverted}70` }
-                  : { color: theme.colors.textSecondary },
-              ]}
-            >
-              {formattedTime}
-            </Text>
-            <ContextIndicator contextChain={contextChain} theme={theme} />
-          </View>
+        <View
+          style={[
+            styles.messageBubble,
+            isUser ? styles.userBubble : styles.assistantBubble,
+            {
+              backgroundColor: isUser
+                ? theme.colors.primary
+                : theme.colors.surface,
+              borderColor: `${theme.colors.primary}30`,
+            },
+            isPartOfContext && {
+              borderWidth: 1,
+            },
+            { shadowColor: theme.colors.shadow },
+          ]}
+        >
+          <Text
+            style={[
+              styles.messageText,
+              {
+                color: isUser
+                  ? theme.colors.textInverted
+                  : theme.colors.textPrimary,
+              },
+            ]}
+          >
+            {message.content}
+          </Text>
 
-          {!isUser && (
+          <View style={styles.messageFooter}>
+            <View style={styles.footerLeft}>
+              <Text
+                style={[
+                  styles.timestamp,
+                  {
+                    color: isUser
+                      ? `${theme.colors.textInverted}70`
+                      : theme.colors.textSecondary,
+                  },
+                ]}
+              >
+                {formattedTime}
+              </Text>
+              <ContextIndicator contextChain={contextChain} theme={theme} />
+            </View>
+
             <TouchableOpacity
               onPress={handleCopy}
               style={styles.copyButton}
@@ -131,31 +148,45 @@ export const MessageBubble = memo(({ message, isPartOfContext }) => {
                 size={16}
                 color={
                   isUser
-                    ? `${theme.colors.textInverted}70`
+                    ? theme.colors.textInverted
                     : theme.colors.textSecondary
                 }
               />
             </TouchableOpacity>
-          )}
+          </View>
         </View>
       </View>
-    </View>
-  );
-}, areEqual);
+    );
+  },
+  areEqual
+);
 
 MessageBubble.displayName = "MessageBubble";
 
 const styles = StyleSheet.create({
   messageContainer: {
-    flexDirection: "row",
-    marginVertical: 4,
+    marginVertical: 8,
     paddingHorizontal: 8,
   },
   userMessageContainer: {
-    justifyContent: "flex-end",
+    alignItems: "flex-end",
   },
   assistantMessageContainer: {
-    justifyContent: "flex-start",
+    alignItems: "flex-start",
+  },
+  partnerName: {
+    fontSize: 14,
+    fontWeight: "600",
+    marginBottom: 4,
+    marginLeft: 12,
+  },
+  userLabel: {
+    marginRight: 12,
+    marginLeft: 0,
+  },
+  assistantLabel: {
+    marginLeft: 12,
+    marginRight: 0,
   },
   messageBubble: {
     maxWidth: "80%",
@@ -172,7 +203,6 @@ const styles = StyleSheet.create({
   },
   assistantBubble: {
     borderBottomLeftRadius: 5,
-    marginTop: 5,
   },
   messageText: {
     fontSize: 16,

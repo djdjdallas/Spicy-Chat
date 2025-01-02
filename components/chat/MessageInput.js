@@ -1,4 +1,4 @@
-// components/chat/MessageInput.js
+// MessageInput.js
 import React, { memo, useCallback, useState } from "react";
 import {
   View,
@@ -110,11 +110,13 @@ MessageInput.displayName = "MessageInput";
 const styles = StyleSheet.create({
   container: {
     borderTopWidth: 1,
+    width: "100%",
   },
   inputContainer: {
     flexDirection: "row",
     alignItems: "flex-end",
-    padding: 20,
+    padding: 10,
+    paddingBottom: Platform.OS === "ios" ? 25 : 10,
   },
   input: {
     flex: 1,
@@ -139,5 +141,3 @@ const styles = StyleSheet.create({
     shadowRadius: 1.41,
   },
 });
-
-export default MessageInput;

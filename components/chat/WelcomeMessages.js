@@ -3,14 +3,19 @@ import React from "react";
 import { View } from "react-native";
 import { MessageBubble } from "./MessageBubble";
 
-export const WelcomeMessages = () => {
+export const WelcomeMessages = ({ theme, partnerName }) => {
   const welcomeMessages = [
     {
       id: "welcome-1",
       role: "assistant",
-      content:
-        "Hey, I'm Spicy GPT! 🌶️ Ready to help you spice up your conversations. How can I help you today?",
+      content: `Hey, I'm ${
+        partnerName || "your conversation partner"
+      }! Ready to help you practice your conversation skills. How can I help you today?`,
       created_at: new Date().toISOString(),
+      metadata: {
+        partnerName: partnerName,
+        isPartnerMessage: true,
+      },
     },
   ];
 
@@ -21,8 +26,12 @@ export const WelcomeMessages = () => {
           key={message.id}
           message={message}
           isPartOfContext={false}
+          theme={theme}
+          senderName={partnerName || "Assistant"}
         />
       ))}
     </View>
   );
 };
+
+export default WelcomeMessages;
