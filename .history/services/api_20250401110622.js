@@ -42,13 +42,6 @@ export const containsPetNames = (message) => {
   );
 };
 
-// Approved greeting options
-const getRandomGreeting = () => {
-  const greetings = ["Hey", "Hi", "What's up"];
-
-  return greetings[Math.floor(Math.random() * greetings.length)];
-};
-
 // Detect text creation requests
 const detectTextCreationRequest = (message) => {
   const creationPhrases = [
@@ -150,7 +143,6 @@ export const sendMessageToAPI = async (
     const isModifyRequest = detectModificationRequest(content);
     const isTextCreationRequest = detectTextCreationRequest(content);
     const messageContext = buildMessageContext(lastMessages);
-    const greeting = getRandomGreeting();
 
     // Build enhanced prompt based on request type
     let enhancedPrompt = "";
@@ -162,9 +154,7 @@ export const sendMessageToAPI = async (
       referenceMessage: isModifyRequest ? lastResponse?.id : null,
       contextBehavior: "continuous_conversation",
       contextDepth: lastMessages.length,
-      avoidPetNames: true,
-      startWithGreeting: true,
-      approvedGreetings: ["Hey", "Hi", "What's up"],
+      avoidPetNames: true, // Add instruction to avoid pet names
     };
 
     if (isTextCreationRequest) {
@@ -180,8 +170,6 @@ YOUR REQUEST: ${content}
 
 I'll compose this in first person, naturally incorporating your voice and style.
 Please don't use pet names or terms of endearment like "babe", "baby", "darling", "sweetheart", etc.
-Start your response with one of these greetings: "Hey", "Hi", or "What's up" if appropriate for the context.
-Do not use "Hey there" or "Hi there".
 `.trim();
 
       systemInstructions = {
@@ -201,8 +189,6 @@ Modification requested: ${content}
 
 Please modify the previous response while maintaining conversation context and relevance.
 Do not use pet names or terms of endearment like "babe", "baby", "darling", etc.
-Start your response with one of these greetings: "Hey", "Hi", or "What's up" if appropriate for the context.
-Do not use "Hey there" or "Hi there".
 `.trim();
     } else {
       enhancedPrompt = `
@@ -214,8 +200,6 @@ CURRENT REQUEST: ${content}
 
 Please maintain conversation continuity and reference previous context when appropriate.
 Do not use pet names or terms of endearment like "babe", "baby", "darling", "sweetheart", etc.
-Start your response with one of these greetings: "Hey", "Hi", or "What's up" if appropriate for the context.
-Do not use "Hey there" or "Hi there".
 `.trim();
     }
 
@@ -238,7 +222,6 @@ Do not use "Hey there" or "Hi there".
         contextSize: lastMessages.length,
         messageContext,
         avoidPetNames: true,
-        preferredGreeting: greeting,
       },
       systemInstructions,
     };
@@ -282,7 +265,6 @@ Do not use "Hey there" or "Hi there".
       contextUsed: lastMessages.length,
       messageContext,
       avoidPetNames: true,
-      preferredGreeting: greeting,
     };
 
     const metadataMatch = rawText.match(/<NanoGPT>(.*?)<\/NanoGPT>/);
@@ -294,15 +276,6 @@ Do not use "Hey there" or "Hi there".
       } catch (error) {
         console.warn("Failed to parse metadata:", error);
       }
-    }
-
-    // Ensure the response starts with an approved greeting if it doesn't already
-    if (
-      !responseText.startsWith("Hey") &&
-      !responseText.startsWith("Hi") &&
-      !responseText.startsWith("What's up")
-    ) {
-      responseText = `${greeting}! ${responseText}`;
     }
 
     return {
@@ -340,7 +313,7 @@ Do not use "Hey there" or "Hi there".
 
     return {
       responseText:
-        "Hey! I apologize, but I'm having trouble connecting right now. Please try again in a moment.",
+        "I apologize, but I'm having trouble connecting right now. Please try again in a moment.",
       metadata: {},
       success: false,
     };

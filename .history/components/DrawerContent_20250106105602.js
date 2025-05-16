@@ -162,12 +162,12 @@ export default function DrawerContent(props) {
             onPress={() => props.navigation.navigate("Chat")}
             theme={theme}
           />
-          {/* <DrawerItem
+          <DrawerItem
             label="Conversation Partners"
             icon={(props) => <Ionicons name="people-outline" {...props} />}
             onPress={() => props.navigation.navigate("Partners")}
             theme={theme}
-          /> */}
+          />
           <DrawerItem
             label="Profile"
             icon={(props) => <Ionicons name="person-outline" {...props} />}

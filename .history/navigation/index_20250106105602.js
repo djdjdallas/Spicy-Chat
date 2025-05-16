@@ -105,7 +105,7 @@ function DrawerNavigator() {
           ),
         }}
       />
-      {/* <Drawer.Screen
+      <Drawer.Screen
         name="Partners"
         component={PartnerSelection}
         options={{
@@ -114,7 +114,7 @@ function DrawerNavigator() {
             <Ionicons name="people-outline" size={size} color={color} />
           ),
         }}
-      /> */}
+      />
       <Drawer.Screen
         name="Profile"
         component={Profile}

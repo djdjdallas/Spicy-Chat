@@ -4,49 +4,12 @@ import { API_KEY, API_URL } from "@env";
 export const FREE_MESSAGE_LIMIT = 10;
 const MAX_RETRIES = 3;
 const RETRY_DELAY = 1000;
-export const CHARACTER_LIMIT = 500;
 
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
 const isValidResponse = (text) => {
   if (!text || typeof text !== "string") return false;
   return text.length > 0 && text.length < 10000;
-};
-
-// Detect pet names and terms of endearment
-export const containsPetNames = (message) => {
-  const petNames = [
-    "babe",
-    "baby",
-    "darling",
-    "sweetheart",
-    "sweetie",
-    "honey",
-    "dear",
-    "love",
-    "lovey",
-    "hun",
-    "cutie",
-    "sugar",
-    "sexy",
-    "beautiful",
-  ];
-
-  const normalizedMessage = message.toLowerCase().trim();
-
-  return petNames.some(
-    (name) =>
-      normalizedMessage.includes(name) ||
-      normalizedMessage.startsWith(name) ||
-      normalizedMessage.endsWith(name)
-  );
-};
-
-// Approved greeting options
-const getRandomGreeting = () => {
-  const greetings = ["Hey", "Hi", "What's up"];
-
-  return greetings[Math.floor(Math.random() * greetings.length)];
 };
 
 // Detect text creation requests
@@ -150,7 +113,6 @@ export const sendMessageToAPI = async (
     const isModifyRequest = detectModificationRequest(content);
     const isTextCreationRequest = detectTextCreationRequest(content);
     const messageContext = buildMessageContext(lastMessages);
-    const greeting = getRandomGreeting();
 
     // Build enhanced prompt based on request type
     let enhancedPrompt = "";
@@ -162,9 +124,6 @@ export const sendMessageToAPI = async (
       referenceMessage: isModifyRequest ? lastResponse?.id : null,
       contextBehavior: "continuous_conversation",
       contextDepth: lastMessages.length,
-      avoidPetNames: true,
-      startWithGreeting: true,
-      approvedGreetings: ["Hey", "Hi", "What's up"],
     };
 
     if (isTextCreationRequest) {
@@ -179,9 +138,6 @@ ${lastMessages
 YOUR REQUEST: ${content}
 
 I'll compose this in first person, naturally incorporating your voice and style.
-Please don't use pet names or terms of endearment like "babe", "baby", "darling", "sweetheart", etc.
-Start your response with one of these greetings: "Hey", "Hi", or "What's up" if appropriate for the context.
-Do not use "Hey there" or "Hi there".
 `.trim();
 
       systemInstructions = {
@@ -200,9 +156,6 @@ ${lastResponse.content}
 Modification requested: ${content}
 
 Please modify the previous response while maintaining conversation context and relevance.
-Do not use pet names or terms of endearment like "babe", "baby", "darling", etc.
-Start your response with one of these greetings: "Hey", "Hi", or "What's up" if appropriate for the context.
-Do not use "Hey there" or "Hi there".
 `.trim();
     } else {
       enhancedPrompt = `
@@ -213,9 +166,6 @@ ${lastMessages
 CURRENT REQUEST: ${content}
 
 Please maintain conversation continuity and reference previous context when appropriate.
-Do not use pet names or terms of endearment like "babe", "baby", "darling", "sweetheart", etc.
-Start your response with one of these greetings: "Hey", "Hi", or "What's up" if appropriate for the context.
-Do not use "Hey there" or "Hi there".
 `.trim();
     }
 
@@ -237,8 +187,6 @@ Do not use "Hey there" or "Hi there".
         messageChain: conversationHistory.length,
         contextSize: lastMessages.length,
         messageContext,
-        avoidPetNames: true,
-        preferredGreeting: greeting,
       },
       systemInstructions,
     };
@@ -281,8 +229,6 @@ Do not use "Hey there" or "Hi there".
       isTextCreationRequest,
       contextUsed: lastMessages.length,
       messageContext,
-      avoidPetNames: true,
-      preferredGreeting: greeting,
     };
 
     const metadataMatch = rawText.match(/<NanoGPT>(.*?)<\/NanoGPT>/);
@@ -294,15 +240,6 @@ Do not use "Hey there" or "Hi there".
       } catch (error) {
         console.warn("Failed to parse metadata:", error);
       }
-    }
-
-    // Ensure the response starts with an approved greeting if it doesn't already
-    if (
-      !responseText.startsWith("Hey") &&
-      !responseText.startsWith("Hi") &&
-      !responseText.startsWith("What's up")
-    ) {
-      responseText = `${greeting}! ${responseText}`;
     }
 
     return {
@@ -340,7 +277,7 @@ Do not use "Hey there" or "Hi there".
 
     return {
       responseText:
-        "Hey! I apologize, but I'm having trouble connecting right now. Please try again in a moment.",
+        "I apologize, but I'm having trouble connecting right now. Please try again in a moment.",
       metadata: {},
       success: false,
     };
@@ -371,20 +308,5 @@ export const formatMessageHistory = (messages, limit = 10) => {
 export const validateMessage = (content) => {
   if (!content || typeof content !== "string") return false;
   const trimmedContent = content.trim();
-
-  // Check message length
-  if (trimmedContent.length === 0 || trimmedContent.length > CHARACTER_LIMIT) {
-    return false;
-  }
-
-  // Check for pet names
-  if (containsPetNames(trimmedContent)) {
-    Alert.alert(
-      "Message Not Sent",
-      "Please avoid using pet names or terms of endearment in your messages."
-    );
-    return false;
-  }
-
-  return true;
+  return trimmedContent.length > 0 && trimmedContent.length <= 2000;
 };
