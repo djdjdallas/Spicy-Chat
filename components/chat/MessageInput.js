@@ -1,4 +1,4 @@
-// MessageInput.js
+// components/chat/MessageInput.js
 import React, { memo, useCallback, useState } from "react";
 import {
   View,
@@ -54,49 +54,53 @@ export const MessageInput = memo(({ sendMessage, isLoading }) => {
       ]}
     >
       <View style={styles.inputContainer}>
-        <TextInput
+        <View
           style={[
-            styles.input,
+            styles.inputWrapper,
             {
-              backgroundColor: theme.colors.background,
-              color: theme.colors.textPrimary,
+              backgroundColor: theme.colors.inputBackground,
               borderColor: theme.colors.border,
             },
           ]}
-          value={localInputText}
-          onChangeText={handleChangeText}
-          placeholder="Type a message..."
-          placeholderTextColor={theme.colors.textSecondary}
-          multiline
-          maxLength={2000}
-          editable={!isLoading}
-          onKeyPress={handleKeyPress}
-        />
+        >
+          <TextInput
+            style={[
+              styles.input,
+              { color: theme.colors.textPrimary },
+              theme.typography.body,
+            ]}
+            value={localInputText}
+            onChangeText={handleChangeText}
+            placeholder="Type a message..."
+            placeholderTextColor={theme.colors.textTertiary}
+            multiline
+            maxLength={2000}
+            editable={!isLoading}
+            onKeyPress={handleKeyPress}
+          />
+        </View>
 
         <TouchableOpacity
           style={[
             styles.sendButton,
             {
               backgroundColor: isDisabled
-                ? theme.colors.border
+                ? theme.colors.graphite
                 : theme.colors.primary,
-              shadowColor: theme.colors.shadow,
+              ...(!isDisabled && theme.shadows.sm),
             },
           ]}
           onPress={handleSend}
           disabled={isDisabled}
+          activeOpacity={0.7}
         >
           {isLoading ? (
-            <ActivityIndicator color={theme.colors.textInverted} size="small" />
+            <ActivityIndicator color={theme.colors.pureWhite} size="small" />
           ) : (
             <Ionicons
-              name="send"
-              size={24}
-              color={
-                isDisabled
-                  ? theme.colors.textSecondary
-                  : theme.colors.textInverted
-              }
+              name="arrow-up"
+              size={22}
+              color={theme.colors.pureWhite}
             />
           )}
         </TouchableOpacity>
@@ -115,29 +119,30 @@ const styles = StyleSheet.create({
   inputContainer: {
     flexDirection: "row",
     alignItems: "flex-end",
-    padding: 10,
-    paddingBottom: Platform.OS === "ios" ? 25 : 10,
+    padding: 12,
+    paddingBottom: Platform.OS === "ios" ? 28 : 12,
+    gap: 10,
+  },
+  inputWrapper: {
+    flex: 1,
+    borderRadius: 24,
+    borderWidth: 1,
+    overflow: "hidden",
   },
   input: {
-    flex: 1,
-    borderRadius: 20,
-    paddingHorizontal: 15,
-    paddingTop: Platform.OS === "ios" ? 10 : 8,
-    paddingBottom: Platform.OS === "ios" ? 10 : 8,
-    marginRight: 10,
-    fontSize: 16,
-    maxHeight: 100,
-    minHeight: 40,
+    paddingHorizontal: 18,
+    paddingTop: Platform.OS === "ios" ? 12 : 10,
+    paddingBottom: Platform.OS === "ios" ? 12 : 10,
+    maxHeight: 120,
+    minHeight: 44,
   },
   sendButton: {
-    borderRadius: 20,
-    width: 40,
-    height: 40,
+    borderRadius: 22,
+    width: 44,
+    height: 44,
     justifyContent: "center",
     alignItems: "center",
-    elevation: 2,
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.2,
-    shadowRadius: 1.41,
   },
 });
+
+export default MessageInput;

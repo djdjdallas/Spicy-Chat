@@ -10,16 +10,18 @@ import {
   Animated,
   SafeAreaView,
 } from "react-native";
-import Constants from "expo-constants";
+import { Ionicons } from "@expo/vector-icons";
+import { useTheme } from "./context/ThemeContext";
 
 const { width, height } = Dimensions.get("window");
 
 const onboardingData = [
   {
     id: "1",
-    title: "Welcome to RizzChat",
+    title: "Welcome to Poise",
     description:
       "Your AI-powered conversation coach that helps you develop better communication skills",
+    icon: "chatbubbles-outline",
     key: "welcome",
   },
   {
@@ -27,6 +29,7 @@ const onboardingData = [
     title: "Practice Makes Perfect",
     description:
       "Get real-time feedback on your conversations and learn from AI-powered suggestions",
+    icon: "bulb-outline",
     key: "practice",
   },
   {
@@ -34,11 +37,13 @@ const onboardingData = [
     title: "Safe and Private",
     description:
       "Your conversations are private and secure. Practice without pressure or judgment",
+    icon: "shield-checkmark-outline",
     key: "privacy",
   },
 ];
 
 const OnboardingScreen = ({ onComplete }) => {
+  const { theme } = useTheme();
   const [currentIndex, setCurrentIndex] = useState(0);
   const scrollX = useRef(new Animated.Value(0)).current;
   const slidesRef = useRef(null);
@@ -57,12 +62,40 @@ const OnboardingScreen = ({ onComplete }) => {
     }
   };
 
-  const renderItem = ({ item }) => {
+  const renderItem = ({ item, index }) => {
     return (
       <View style={styles.slide}>
-        <View style={styles.titleContainer}>
-          <Text style={styles.title}>{item.title}</Text>
-          <Text style={styles.description}>{item.description}</Text>
+        <View style={styles.slideContent}>
+          <View
+            style={[
+              styles.iconContainer,
+              { backgroundColor: theme.colors.primaryMuted },
+            ]}
+          >
+            <Ionicons
+              name={item.icon}
+              size={48}
+              color={theme.colors.primary}
+            />
+          </View>
+          <Text
+            style={[
+              styles.title,
+              { color: theme.colors.textPrimary },
+              theme.typography.h1,
+            ]}
+          >
+            {item.title}
+          </Text>
+          <Text
+            style={[
+              styles.description,
+              { color: theme.colors.textSecondary },
+              theme.typography.bodyLarge,
+            ]}
+          >
+            {item.description}
+          </Text>
         </View>
       </View>
     );
@@ -80,7 +113,7 @@ const OnboardingScreen = ({ onComplete }) => {
 
           const dotWidth = scrollX.interpolate({
             inputRange,
-            outputRange: [10, 20, 10],
+            outputRange: [8, 24, 8],
             extrapolate: "clamp",
           });
 
@@ -97,6 +130,7 @@ const OnboardingScreen = ({ onComplete }) => {
                 {
                   width: dotWidth,
                   opacity,
+                  backgroundColor: theme.colors.black,
                 },
               ]}
               key={index.toString()}
@@ -108,7 +142,9 @@ const OnboardingScreen = ({ onComplete }) => {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView
+      style={[styles.container, { backgroundColor: theme.colors.background }]}
+    >
       <View style={styles.flatListContainer}>
         <FlatList
           data={onboardingData}
@@ -128,12 +164,58 @@ const OnboardingScreen = ({ onComplete }) => {
           ref={slidesRef}
         />
       </View>
-      <Paginator />
-      <TouchableOpacity style={styles.button} onPress={scrollTo}>
-        <Text style={styles.buttonText}>
-          {currentIndex === onboardingData.length - 1 ? "Get Started" : "Next"}
-        </Text>
-      </TouchableOpacity>
+
+      <View style={styles.bottomContainer}>
+        <Paginator />
+
+        <TouchableOpacity
+          style={[
+            styles.button,
+            {
+              backgroundColor:
+                currentIndex === onboardingData.length - 1
+                  ? theme.colors.primary
+                  : theme.colors.black,
+            },
+          ]}
+          onPress={scrollTo}
+          activeOpacity={0.85}
+        >
+          <Text
+            style={[
+              styles.buttonText,
+              { color: theme.colors.pureWhite },
+              theme.typography.button,
+            ]}
+          >
+            {currentIndex === onboardingData.length - 1 ? "Get Started" : "Next"}
+          </Text>
+          <Ionicons
+            name="arrow-forward"
+            size={20}
+            color={theme.colors.pureWhite}
+            style={styles.buttonIcon}
+          />
+        </TouchableOpacity>
+
+        {currentIndex < onboardingData.length - 1 && (
+          <TouchableOpacity
+            style={styles.skipButton}
+            onPress={onComplete}
+            activeOpacity={0.7}
+          >
+            <Text
+              style={[
+                styles.skipText,
+                { color: theme.colors.textSecondary },
+                theme.typography.body,
+              ]}
+            >
+              Skip
+            </Text>
+          </TouchableOpacity>
+        )}
+      </View>
     </SafeAreaView>
   );
 };
@@ -141,61 +223,72 @@ const OnboardingScreen = ({ onComplete }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#f5f5f5",
-    alignItems: "center",
-    justifyContent: "center",
   },
   flatListContainer: {
-    flex: 3,
+    flex: 1,
   },
   slide: {
     width,
-    height: height * 0.75,
     alignItems: "center",
     justifyContent: "center",
-    padding: 20,
+    paddingHorizontal: 32,
   },
-  titleContainer: {
-    flex: 1,
+  slideContent: {
     alignItems: "center",
+    maxWidth: 320,
+  },
+  iconContainer: {
+    width: 120,
+    height: 120,
+    borderRadius: 60,
     justifyContent: "center",
+    alignItems: "center",
+    marginBottom: 40,
   },
   title: {
-    fontSize: 28,
-    fontWeight: "bold",
-    color: "#0084ff",
     textAlign: "center",
-    marginBottom: 10,
+    marginBottom: 16,
   },
   description: {
-    fontSize: 18,
-    color: "#666",
     textAlign: "center",
-    paddingHorizontal: 20,
+    lineHeight: 28,
+  },
+  bottomContainer: {
+    paddingHorizontal: 24,
+    paddingBottom: 48,
   },
   paginationContainer: {
     flexDirection: "row",
-    height: 40,
     justifyContent: "center",
     alignItems: "center",
+    marginBottom: 32,
   },
   dot: {
-    height: 10,
-    borderRadius: 5,
-    backgroundColor: "#0084ff",
-    marginHorizontal: 8,
+    height: 8,
+    borderRadius: 4,
+    marginHorizontal: 4,
   },
   button: {
-    backgroundColor: "#0084ff",
-    padding: 15,
-    paddingHorizontal: 30,
-    borderRadius: 25,
-    marginBottom: 50,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: 16,
+    paddingHorizontal: 32,
+    borderRadius: 12,
+    marginBottom: 16,
   },
   buttonText: {
-    color: "white",
-    fontSize: 18,
-    fontWeight: "bold",
+    // Typography applied via theme
+  },
+  buttonIcon: {
+    marginLeft: 8,
+  },
+  skipButton: {
+    alignItems: "center",
+    paddingVertical: 8,
+  },
+  skipText: {
+    // Typography applied via theme
   },
 });
 

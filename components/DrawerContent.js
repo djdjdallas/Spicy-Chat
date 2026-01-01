@@ -2,20 +2,13 @@
 import React, { useState, useEffect } from "react";
 import {
   View,
+  Text,
   StyleSheet,
   TouchableOpacity,
   Alert,
-  Platform,
+  Switch,
 } from "react-native";
 import { DrawerContentScrollView } from "@react-navigation/drawer";
-import {
-  Text,
-  Title,
-  Caption,
-  Drawer,
-  Switch,
-  TouchableRipple,
-} from "react-native-paper";
 import { Ionicons } from "@expo/vector-icons";
 import { supabase } from "../lib/supabase";
 import { useTheme } from "../context/ThemeContext";
@@ -27,29 +20,54 @@ const UserAvatar = ({ user, theme }) => {
         .split(" ")
         .map((name) => name[0])
         .join("")
-        .toUpperCase();
+        .toUpperCase()
+        .slice(0, 2);
     }
     return user?.email?.[0].toUpperCase() || "?";
   };
 
   return (
     <View style={[styles.avatar, { backgroundColor: theme.colors.primary }]}>
-      <Text style={styles.avatarText}>{getInitials()}</Text>
+      <Text style={[styles.avatarText, { color: theme.colors.pureWhite }]}>
+        {getInitials()}
+      </Text>
     </View>
   );
 };
 
-const DrawerItem = ({ label, icon: Icon, onPress, theme }) => (
-  <TouchableRipple onPress={onPress} style={styles.drawerItem}>
-    <View style={styles.drawerItemContent}>
-      <Icon color={theme.colors.textPrimary} size={24} />
-      <Text
-        style={[styles.drawerItemLabel, { color: theme.colors.textPrimary }]}
-      >
-        {label}
-      </Text>
+const DrawerItem = ({ label, icon, onPress, theme, isDestructive = false }) => (
+  <TouchableOpacity
+    onPress={onPress}
+    style={[styles.drawerItem, { backgroundColor: "transparent" }]}
+    activeOpacity={0.7}
+  >
+    <View
+      style={[
+        styles.drawerItemIcon,
+        { backgroundColor: isDestructive ? theme.colors.errorMuted : theme.colors.backgroundTertiary },
+      ]}
+    >
+      <Ionicons
+        name={icon}
+        size={20}
+        color={isDestructive ? theme.colors.error : theme.colors.textPrimary}
+      />
     </View>
-  </TouchableRipple>
+    <Text
+      style={[
+        styles.drawerItemLabel,
+        { color: isDestructive ? theme.colors.error : theme.colors.textPrimary },
+        theme.typography.body,
+      ]}
+    >
+      {label}
+    </Text>
+    <Ionicons
+      name="chevron-forward"
+      size={18}
+      color={theme.colors.textTertiary}
+    />
+  </TouchableOpacity>
 );
 
 export default function DrawerContent(props) {
@@ -116,126 +134,129 @@ export default function DrawerContent(props) {
     );
   };
 
+  const menuItems = [
+    { label: "Chat", icon: "chatbubble-outline", screen: "Chat" },
+    { label: "Partners", icon: "people-outline", screen: "Partners" },
+    { label: "Profile", icon: "person-outline", screen: "Profile" },
+    { label: "History", icon: "time-outline", screen: "ConversationHistory" },
+    { label: "Tips", icon: "bulb-outline", screen: "Tips" },
+    { label: "Settings", icon: "settings-outline", screen: "Settings" },
+  ];
+
   return (
     <DrawerContentScrollView
       {...props}
       style={{ backgroundColor: theme.colors.background }}
+      contentContainerStyle={styles.scrollContent}
     >
-      <View
-        style={[
-          styles.drawerContent,
-          { backgroundColor: theme.colors.background },
-        ]}
-      >
+      <View style={[styles.drawerContent, { backgroundColor: theme.colors.background }]}>
+        {/* Header with Logo */}
+        <View style={[styles.headerSection, { borderBottomColor: theme.colors.border }]}>
+          <View style={[styles.logoContainer, { backgroundColor: theme.colors.black }]}>
+            <Text style={[styles.logoText, { color: theme.colors.pureWhite }]}>P</Text>
+          </View>
+          <Text style={[styles.brandName, { color: theme.colors.textPrimary }, theme.typography.h2]}>
+            Poise
+          </Text>
+          <Text style={[styles.tagline, { color: theme.colors.textTertiary }, theme.typography.caption]}>
+            Master the art of conversation
+          </Text>
+        </View>
+
         {/* User Info Section */}
-        <View
-          style={[
-            styles.userInfoSection,
-            { borderBottomColor: theme.colors.border },
-          ]}
+        <TouchableOpacity
+          style={[styles.userSection, { backgroundColor: theme.colors.surface }]}
+          onPress={() => props.navigation.navigate("Profile")}
+          activeOpacity={0.7}
         >
-          <TouchableOpacity
-            style={styles.profileSection}
-            onPress={() => props.navigation.navigate("Profile")}
-          >
-            <UserAvatar user={user} theme={theme} />
-            <View style={styles.userInfo}>
-              <Title
-                style={[styles.title, { color: theme.colors.textPrimary }]}
-              >
-                {user?.user_metadata?.full_name || "User"}
-              </Title>
-              <Caption
-                style={[styles.caption, { color: theme.colors.textSecondary }]}
-              >
-                {user?.email}
-              </Caption>
+          <UserAvatar user={user} theme={theme} />
+          <View style={styles.userInfo}>
+            <Text
+              style={[styles.userName, { color: theme.colors.textPrimary }, theme.typography.h4]}
+              numberOfLines={1}
+            >
+              {user?.user_metadata?.full_name || "User"}
+            </Text>
+            <Text
+              style={[styles.userEmail, { color: theme.colors.textSecondary }, theme.typography.caption]}
+              numberOfLines={1}
+            >
+              {user?.email}
+            </Text>
+          </View>
+          <Ionicons name="chevron-forward" size={20} color={theme.colors.textTertiary} />
+        </TouchableOpacity>
+
+        {/* Navigation Items */}
+        <View style={styles.menuSection}>
+          <Text style={[styles.sectionTitle, { color: theme.colors.textTertiary }, theme.typography.overline]}>
+            MENU
+          </Text>
+          <View style={[styles.menuCard, { backgroundColor: theme.colors.surface, ...theme.shadows.sm }]}>
+            {menuItems.map((item, index) => (
+              <View key={item.screen}>
+                <DrawerItem
+                  label={item.label}
+                  icon={item.icon}
+                  onPress={() => props.navigation.navigate(item.screen)}
+                  theme={theme}
+                />
+                {index < menuItems.length - 1 && (
+                  <View style={[styles.divider, { backgroundColor: theme.colors.border }]} />
+                )}
+              </View>
+            ))}
+          </View>
+        </View>
+
+        {/* Preferences Section */}
+        <View style={styles.preferencesSection}>
+          <Text style={[styles.sectionTitle, { color: theme.colors.textTertiary }, theme.typography.overline]}>
+            PREFERENCES
+          </Text>
+          <View style={[styles.preferenceCard, { backgroundColor: theme.colors.surface, ...theme.shadows.sm }]}>
+            <View style={styles.preferenceItem}>
+              <View style={styles.preferenceLeft}>
+                <View style={[styles.drawerItemIcon, { backgroundColor: theme.colors.backgroundTertiary }]}>
+                  <Ionicons name="moon-outline" size={20} color={theme.colors.textPrimary} />
+                </View>
+                <Text style={[styles.preferenceLabel, { color: theme.colors.textPrimary }, theme.typography.body]}>
+                  Dark Mode
+                </Text>
+              </View>
+              <Switch
+                value={isDark}
+                onValueChange={toggleTheme}
+                trackColor={{
+                  false: theme.colors.border,
+                  true: theme.colors.primary,
+                }}
+                thumbColor={theme.colors.pureWhite}
+                ios_backgroundColor={theme.colors.border}
+              />
             </View>
+          </View>
+        </View>
+
+        {/* Sign Out */}
+        <View style={styles.signOutSection}>
+          <TouchableOpacity
+            style={[styles.signOutButton, { backgroundColor: theme.colors.errorMuted }]}
+            onPress={handleSignOut}
+            activeOpacity={0.7}
+          >
+            <Ionicons name="log-out-outline" size={20} color={theme.colors.error} />
+            <Text style={[styles.signOutText, { color: theme.colors.error }, theme.typography.button]}>
+              Sign Out
+            </Text>
           </TouchableOpacity>
         </View>
 
-        {/* Navigation Items */}
-        <Drawer.Section style={styles.drawerSection}>
-          <DrawerItem
-            label="Chat"
-            icon={(props) => <Ionicons name="chatbubble-outline" {...props} />}
-            onPress={() => props.navigation.navigate("Chat")}
-            theme={theme}
-          />
-          {/* <DrawerItem
-            label="Conversation Partners"
-            icon={(props) => <Ionicons name="people-outline" {...props} />}
-            onPress={() => props.navigation.navigate("Partners")}
-            theme={theme}
-          /> */}
-          <DrawerItem
-            label="Profile"
-            icon={(props) => <Ionicons name="person-outline" {...props} />}
-            onPress={() => props.navigation.navigate("Profile")}
-            theme={theme}
-          />
-          <DrawerItem
-            label="Conversation History"
-            icon={(props) => <Ionicons name="time-outline" {...props} />}
-            onPress={() => props.navigation.navigate("ConversationHistory")}
-            theme={theme}
-          />
-          <DrawerItem
-            label="Tips & Tricks"
-            icon={(props) => <Ionicons name="bulb-outline" {...props} />}
-            onPress={() => props.navigation.navigate("Tips")}
-            theme={theme}
-          />
-          <DrawerItem
-            label="Settings"
-            icon={(props) => <Ionicons name="settings-outline" {...props} />}
-            onPress={() => props.navigation.navigate("Settings")}
-            theme={theme}
-          />
-        </Drawer.Section>
-
-        {/* Preferences Section */}
-        <Drawer.Section title="Preferences" theme={theme}>
-          <TouchableRipple onPress={toggleTheme}>
-            <View style={styles.preference}>
-              <Text style={{ color: theme.colors.textPrimary }}>
-                Dark Theme
-              </Text>
-              <View pointerEvents="none">
-                <Switch value={isDark} />
-              </View>
-            </View>
-          </TouchableRipple>
-        </Drawer.Section>
-
-        {/* Sign Out Section */}
-        <Drawer.Section
-          style={[
-            styles.bottomDrawerSection,
-            { borderTopColor: theme.colors.border },
-          ]}
-        >
-          <DrawerItem
-            label="Sign Out"
-            icon={(props) => (
-              <Ionicons
-                name="log-out-outline"
-                {...props}
-                color={theme.colors.error}
-              />
-            )}
-            onPress={handleSignOut}
-            theme={theme}
-          />
-        </Drawer.Section>
-
         {/* Version Info */}
-        <View
-          style={[styles.versionInfo, { borderTopColor: theme.colors.border }]}
-        >
-          <Caption style={{ color: theme.colors.textSecondary }}>
-            Version 1.0.0
-          </Caption>
+        <View style={styles.versionSection}>
+          <Text style={[styles.versionText, { color: theme.colors.textTertiary }, theme.typography.caption]}>
+            Poise v1.0.0
+          </Text>
         </View>
       </View>
     </DrawerContentScrollView>
@@ -243,74 +264,139 @@ export default function DrawerContent(props) {
 }
 
 const styles = StyleSheet.create({
+  scrollContent: {
+    flexGrow: 1,
+  },
   drawerContent: {
     flex: 1,
+    paddingHorizontal: 16,
   },
-  userInfoSection: {
-    paddingLeft: 20,
-    paddingRight: 20,
-    paddingTop: 20,
-    paddingBottom: 10,
+  headerSection: {
+    alignItems: "center",
+    paddingVertical: 24,
     borderBottomWidth: 1,
+    marginBottom: 16,
   },
-  profileSection: {
+  logoContainer: {
+    width: 64,
+    height: 64,
+    borderRadius: 16,
+    justifyContent: "center",
+    alignItems: "center",
+    marginBottom: 12,
+  },
+  logoText: {
+    fontSize: 32,
+    fontWeight: "700",
+    letterSpacing: -1,
+  },
+  brandName: {
+    marginBottom: 4,
+  },
+  tagline: {
+    textAlign: "center",
+  },
+  userSection: {
     flexDirection: "row",
     alignItems: "center",
-    marginTop: 10,
+    padding: 16,
+    borderRadius: 16,
+    marginBottom: 24,
   },
   avatar: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
+    width: 48,
+    height: 48,
+    borderRadius: 14,
     justifyContent: "center",
     alignItems: "center",
   },
   avatarText: {
-    color: "white",
-    fontSize: 32,
-    fontWeight: "bold",
+    fontSize: 18,
+    fontWeight: "600",
   },
   userInfo: {
-    marginLeft: 15,
-    flexDirection: "column",
+    flex: 1,
+    marginLeft: 12,
   },
-  title: {
-    fontSize: 16,
-    marginTop: 3,
-    fontWeight: "bold",
+  userName: {
+    marginBottom: 2,
   },
-  caption: {
-    fontSize: 14,
-    lineHeight: 14,
+  userEmail: {
+    // Typography applied via theme
   },
-  drawerSection: {
-    marginTop: 15,
+  menuSection: {
+    marginBottom: 24,
+  },
+  sectionTitle: {
+    marginBottom: 12,
+    marginLeft: 4,
+    letterSpacing: 1,
+  },
+  menuCard: {
+    borderRadius: 16,
+    overflow: "hidden",
   },
   drawerItem: {
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-  },
-  drawerItemContent: {
     flexDirection: "row",
+    alignItems: "center",
+    paddingVertical: 14,
+    paddingHorizontal: 16,
+  },
+  drawerItemIcon: {
+    width: 36,
+    height: 36,
+    borderRadius: 10,
+    justifyContent: "center",
     alignItems: "center",
   },
   drawerItemLabel: {
-    marginLeft: 32,
-    fontSize: 16,
+    flex: 1,
+    marginLeft: 12,
   },
-  bottomDrawerSection: {
-    marginTop: 15,
-    borderTopWidth: 1,
+  divider: {
+    height: 1,
+    marginLeft: 64,
   },
-  preference: {
+  preferencesSection: {
+    marginBottom: 24,
+  },
+  preferenceCard: {
+    borderRadius: 16,
+    overflow: "hidden",
+  },
+  preferenceItem: {
     flexDirection: "row",
+    alignItems: "center",
     justifyContent: "space-between",
-    paddingVertical: 12,
+    paddingVertical: 14,
     paddingHorizontal: 16,
   },
-  versionInfo: {
-    padding: 20,
+  preferenceLeft: {
+    flexDirection: "row",
     alignItems: "center",
-    borderTopWidth: 1,
+  },
+  preferenceLabel: {
+    marginLeft: 12,
+  },
+  signOutSection: {
+    marginBottom: 16,
+  },
+  signOutButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: 14,
+    borderRadius: 12,
+    gap: 8,
+  },
+  signOutText: {
+    // Typography applied via theme
+  },
+  versionSection: {
+    alignItems: "center",
+    paddingBottom: 24,
+  },
+  versionText: {
+    // Typography applied via theme
   },
 });

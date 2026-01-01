@@ -12,7 +12,7 @@ import { useNavigation, DrawerActions } from "@react-navigation/native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useTheme } from "../../context/ThemeContext";
 
-export const ChatHeader = ({ onNewChat }) => {
+export const ChatHeader = ({ onNewChat, title = "Poise" }) => {
   const navigation = useNavigation();
   const insets = useSafeAreaInsets();
   const { theme } = useTheme();
@@ -29,8 +29,8 @@ export const ChatHeader = ({ onNewChat }) => {
         styles.header,
         {
           paddingTop: insets.top,
-          backgroundColor: theme.colors.primary,
-          shadowColor: theme.colors.shadow,
+          backgroundColor: theme.colors.black,
+          ...theme.shadows.md,
         },
       ]}
     >
@@ -38,29 +38,34 @@ export const ChatHeader = ({ onNewChat }) => {
         onPress={() => navigation.dispatch(DrawerActions.toggleDrawer())}
         style={[
           styles.menuButton,
-          { backgroundColor: "rgba(255, 255, 255, 0.1)" },
+          { backgroundColor: theme.colors.charcoal },
         ]}
         activeOpacity={0.7}
       >
-        <Ionicons name="menu" size={24} color={theme.colors.textInverted} />
+        <Ionicons name="menu" size={22} color={theme.colors.pureWhite} />
       </TouchableOpacity>
 
-      <Text style={[styles.headerText, { color: theme.colors.textInverted }]}>
-        RizzChat
-      </Text>
+      <View style={styles.titleContainer}>
+        <View style={[styles.logoContainer, { backgroundColor: theme.colors.primary }]}>
+          <Text style={[styles.logoText, { color: theme.colors.pureWhite }]}>P</Text>
+        </View>
+        <Text style={[styles.headerText, { color: theme.colors.pureWhite }, theme.typography.h3]}>
+          {title}
+        </Text>
+      </View>
 
       <TouchableOpacity
         style={[
           styles.menuButton,
-          { backgroundColor: "rgba(255, 255, 255, 0.1)" },
+          { backgroundColor: theme.colors.charcoal },
         ]}
         onPress={handleNewChat}
         activeOpacity={0.7}
       >
         <Ionicons
-          name="add-outline"
-          size={24}
-          color={theme.colors.textInverted}
+          name="add"
+          size={22}
+          color={theme.colors.pureWhite}
         />
       </TouchableOpacity>
     </View>
@@ -72,34 +77,36 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    paddingHorizontal: 15,
-    paddingBottom: 15,
-    elevation: 5,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.25,
-    shadowRadius: 3.84,
+    paddingHorizontal: 16,
+    paddingBottom: 16,
     zIndex: 1000,
-    ...Platform.select({
-      ios: {
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.25,
-        shadowRadius: 3.84,
-      },
-      android: {
-        elevation: 5,
-      },
-    }),
   },
   menuButton: {
-    width: 40,
-    height: 40,
+    width: 44,
+    height: 44,
     alignItems: "center",
     justifyContent: "center",
-    borderRadius: 20,
+    borderRadius: 12,
+  },
+  titleContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+  },
+  logoContainer: {
+    width: 32,
+    height: 32,
+    borderRadius: 8,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  logoText: {
+    fontSize: 18,
+    fontWeight: "700",
+    letterSpacing: -0.5,
   },
   headerText: {
-    fontSize: 20,
-    fontWeight: "bold",
+    // Typography applied via theme
   },
 });
 

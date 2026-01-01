@@ -16,11 +16,7 @@ import { MessageInput } from "../components/chat/MessageInput";
 import { WelcomeMessages } from "../components/chat/WelcomeMessages";
 import { useConversation } from "../hooks/useConversation";
 import { useConversationPartner } from "../features/ConversationPartner";
-import {
-  sendMessageToAPI,
-  formatMessageHistory,
-  FREE_MESSAGE_LIMIT,
-} from "../services/api";
+import { sendMessageToAPI, formatMessageHistory } from "../services/api";
 import { useTheme } from "../context/ThemeContext";
 
 const Chat = ({ navigation, route }) => {
@@ -29,8 +25,6 @@ const Chat = ({ navigation, route }) => {
   const flatListRef = useRef();
   const [listHeight, setListHeight] = useState(0);
   const [contentHeight, setContentHeight] = useState(0);
-  const [messageCount, setMessageCount] = useState(0);
-  const [hasSubscription, setHasSubscription] = useState(false);
 
   // Get partner info from route params
   const partnerName = route.params?.partnerName || "Assistant";
@@ -56,65 +50,6 @@ const Chat = ({ navigation, route }) => {
   } = useConversation(supabase, route);
 
   const { currentPartner, getInteractionFeedback } = useConversationPartner();
-
-  // Check subscription status and message count on mount
-  useEffect(() => {
-    checkSubscriptionAndMessages();
-  }, []);
-
-  // Verify partner access based on subscription
-  useEffect(() => {
-    if (partnerId && !hasSubscription) {
-      Alert.alert(
-        "Subscription Required",
-        "Conversation partners are only available with a subscription. Please upgrade to continue.",
-        [
-          {
-            text: "Upgrade",
-            onPress: () => navigation.navigate("Settings"),
-          },
-          {
-            text: "Go Back",
-            onPress: () => navigation.goBack(),
-          },
-        ]
-      );
-    }
-  }, [partnerId, hasSubscription]);
-
-  const checkSubscriptionAndMessages = async () => {
-    try {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-
-      // Get user profile with subscription status
-      const { data: profile, error: profileError } = await supabase
-        .from("profiles")
-        .select("has_subscription")
-        .eq("id", user.id)
-        .single();
-
-      if (profileError) throw profileError;
-
-      setHasSubscription(profile?.has_subscription || false);
-
-      // Only count messages for free users
-      if (!profile?.has_subscription) {
-        const { count, error: countError } = await supabase
-          .from("messages")
-          .select("id", { count: "exact", head: true })
-          .eq("user_id", user.id)
-          .eq("role", "user");
-
-        if (countError) throw countError;
-
-        setMessageCount(count || 0);
-      }
-    } catch (error) {
-      console.error("Error checking subscription status:", error);
-    }
-  };
 
   // Initialize conversation when component mounts
   useEffect(() => {
@@ -200,32 +135,11 @@ const Chat = ({ navigation, route }) => {
       return;
     }
 
-    // Check message limit for non-subscribers
-    if (!hasSubscription && messageCount >= FREE_MESSAGE_LIMIT) {
-      Alert.alert(
-        "Message Limit Reached",
-        "You've reached the free message limit. Please upgrade to continue chatting.",
-        [
-          { text: "Cancel", style: "cancel" },
-          {
-            text: "Upgrade",
-            onPress: () => navigation.navigate("Settings"),
-          },
-        ]
-      );
-      return;
-    }
-
     try {
       setIsLoading(true);
 
       // Save user message with context
       const savedUserMessage = await saveMessageToDatabase(messageText, "user");
-
-      // Increment message count for free users
-      if (!hasSubscription) {
-        setMessageCount((prev) => prev + 1);
-      }
 
       // Update messages array with the new user message
       setMessages((prevMessages) => [...prevMessages, savedUserMessage]);
@@ -243,7 +157,7 @@ const Chat = ({ navigation, route }) => {
 
       // Get interaction feedback if partner exists
       let feedbackMetadata = {};
-      if (partnerId && hasSubscription) {
+      if (partnerId) {
         const feedback = getInteractionFeedback(messageText, partnerId);
         feedbackMetadata = {
           ...metadata,
@@ -299,11 +213,6 @@ const Chat = ({ navigation, route }) => {
     }
   };
 
-  // If user tries to access partner chat without subscription, redirect them
-  if (partnerId && !hasSubscription) {
-    return null; // Component will unmount due to navigation in useEffect
-  }
-
   return (
     <View
       style={[styles.container, { backgroundColor: theme.colors.background }]}
@@ -311,8 +220,6 @@ const Chat = ({ navigation, route }) => {
       <ChatHeader
         onNewChat={initializeNewChat}
         theme={theme}
-        messageCount={!hasSubscription ? messageCount : undefined}
-        messageLimit={!hasSubscription ? FREE_MESSAGE_LIMIT : undefined}
       />
       <KeyboardAvoidingView
         behavior={Platform.OS === "ios" ? "padding" : "height"}
@@ -335,8 +242,6 @@ const Chat = ({ navigation, route }) => {
               <WelcomeMessages
                 theme={theme}
                 partnerName={partnerName}
-                messageCount={!hasSubscription ? messageCount : undefined}
-                messageLimit={!hasSubscription ? FREE_MESSAGE_LIMIT : undefined}
               />
             }
             data={messages}
@@ -385,7 +290,6 @@ const Chat = ({ navigation, route }) => {
           sendMessage={sendMessage}
           isLoading={isLoading || conversationLoading}
           theme={theme}
-          disabled={!hasSubscription && messageCount >= FREE_MESSAGE_LIMIT}
         />
       </KeyboardAvoidingView>
     </View>

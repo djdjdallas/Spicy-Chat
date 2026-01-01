@@ -1,65 +1,54 @@
 // pages/Login.js
 import React, { useState } from "react";
 import {
-  StyleSheet,
   View,
   Text,
   TextInput,
   TouchableOpacity,
-  ActivityIndicator,
-  Alert,
+  StyleSheet,
   KeyboardAvoidingView,
   Platform,
+  ActivityIndicator,
+  Alert,
+  SafeAreaView,
 } from "react-native";
 import { supabase } from "../lib/supabase";
+import { useTheme } from "../context/ThemeContext";
+import { APP_NAME, APP_TAGLINE } from "../config/app";
 
-export const Login = () => {
+const Login = () => {
+  const { theme } = useTheme();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
+  const [isSignUp, setIsSignUp] = useState(false);
 
-  const handleLogin = async () => {
+  const handleAuth = async () => {
     if (!email || !password) {
-      Alert.alert("Error", "Please fill in all fields");
+      Alert.alert("Error", "Please enter both email and password");
       return;
     }
 
-    try {
-      setLoading(true);
-      const { error } = await supabase.auth.signInWithPassword({
-        email,
-        password,
-      });
-
-      if (error) throw error;
-
-      // No need to navigate manually - App.js handles navigation based on auth state
-    } catch (error) {
-      Alert.alert("Error", error.message);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleSignUp = async () => {
-    if (!email || !password) {
-      Alert.alert("Error", "Please fill in all fields");
-      return;
-    }
+    setLoading(true);
 
     try {
-      setLoading(true);
-      const { error } = await supabase.auth.signUp({
-        email,
-        password,
-      });
-
-      if (error) throw error;
-
-      Alert.alert(
-        "Success",
-        "Registration successful! Please check your email for verification."
-      );
+      if (isSignUp) {
+        const { error } = await supabase.auth.signUp({
+          email,
+          password,
+        });
+        if (error) throw error;
+        Alert.alert(
+          "Success",
+          "Check your email for a confirmation link to complete your registration."
+        );
+      } else {
+        const { error } = await supabase.auth.signInWithPassword({
+          email,
+          password,
+        });
+        if (error) throw error;
+      }
     } catch (error) {
       Alert.alert("Error", error.message);
     } finally {
@@ -68,99 +57,248 @@ export const Login = () => {
   };
 
   return (
-    <KeyboardAvoidingView
-      behavior={Platform.OS === "ios" ? "padding" : "height"}
-      style={styles.container}
+    <SafeAreaView
+      style={[styles.container, { backgroundColor: theme.colors.background }]}
     >
-      <View style={styles.formContainer}>
-        <Text style={styles.title}>Welcome to RizzChat</Text>
+      <KeyboardAvoidingView
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
+        style={styles.keyboardView}
+      >
+        <View style={styles.content}>
+          {/* Logo/Brand Section */}
+          <View style={styles.brandSection}>
+            <View
+              style={[
+                styles.logoContainer,
+                { backgroundColor: theme.colors.black },
+              ]}
+            >
+              <Text style={[styles.logoText, { color: theme.colors.pureWhite }]}>
+                P
+              </Text>
+            </View>
+            <Text
+              style={[
+                styles.title,
+                { color: theme.colors.textPrimary },
+                theme.typography.h1,
+              ]}
+            >
+              {APP_NAME}
+            </Text>
+            <Text
+              style={[
+                styles.subtitle,
+                { color: theme.colors.textSecondary },
+                theme.typography.body,
+              ]}
+            >
+              {APP_TAGLINE}
+            </Text>
+          </View>
 
-        <TextInput
-          style={styles.input}
-          placeholder="Email"
-          value={email}
-          onChangeText={setEmail}
-          autoCapitalize="none"
-          keyboardType="email-address"
-        />
+          {/* Form Section */}
+          <View style={styles.formSection}>
+            <View style={styles.inputContainer}>
+              <Text
+                style={[
+                  styles.inputLabel,
+                  { color: theme.colors.textSecondary },
+                  theme.typography.caption,
+                ]}
+              >
+                EMAIL
+              </Text>
+              <TextInput
+                style={[
+                  styles.input,
+                  {
+                    backgroundColor: theme.colors.inputBackground,
+                    color: theme.colors.textPrimary,
+                  },
+                ]}
+                placeholder="Enter your email"
+                placeholderTextColor={theme.colors.textTertiary}
+                value={email}
+                onChangeText={setEmail}
+                keyboardType="email-address"
+                autoCapitalize="none"
+                autoComplete="email"
+              />
+            </View>
 
-        <TextInput
-          style={styles.input}
-          placeholder="Password"
-          value={password}
-          onChangeText={setPassword}
-          secureTextEntry
-        />
+            <View style={styles.inputContainer}>
+              <Text
+                style={[
+                  styles.inputLabel,
+                  { color: theme.colors.textSecondary },
+                  theme.typography.caption,
+                ]}
+              >
+                PASSWORD
+              </Text>
+              <TextInput
+                style={[
+                  styles.input,
+                  {
+                    backgroundColor: theme.colors.inputBackground,
+                    color: theme.colors.textPrimary,
+                  },
+                ]}
+                placeholder="Enter your password"
+                placeholderTextColor={theme.colors.textTertiary}
+                value={password}
+                onChangeText={setPassword}
+                secureTextEntry
+                autoComplete="password"
+              />
+            </View>
 
-        <TouchableOpacity
-          style={[styles.button, loading && styles.buttonDisabled]}
-          onPress={handleLogin}
-          disabled={loading}
-        >
-          {loading ? (
-            <ActivityIndicator color="#fff" />
-          ) : (
-            <Text style={styles.buttonText}>Login</Text>
-          )}
-        </TouchableOpacity>
+            <TouchableOpacity
+              style={[
+                styles.primaryButton,
+                { backgroundColor: theme.colors.primary },
+              ]}
+              onPress={handleAuth}
+              disabled={loading}
+              activeOpacity={0.85}
+            >
+              {loading ? (
+                <ActivityIndicator color={theme.colors.pureWhite} />
+              ) : (
+                <Text
+                  style={[
+                    styles.primaryButtonText,
+                    { color: theme.colors.pureWhite },
+                    theme.typography.button,
+                  ]}
+                >
+                  {isSignUp ? "Create Account" : "Sign In"}
+                </Text>
+              )}
+            </TouchableOpacity>
 
-        <TouchableOpacity
-          style={[
-            styles.button,
-            styles.signUpButton,
-            loading && styles.buttonDisabled,
-          ]}
-          onPress={handleSignUp}
-          disabled={loading}
-        >
-          <Text style={styles.buttonText}>Sign Up</Text>
-        </TouchableOpacity>
-      </View>
-    </KeyboardAvoidingView>
+            <TouchableOpacity
+              style={styles.switchButton}
+              onPress={() => setIsSignUp(!isSignUp)}
+              activeOpacity={0.7}
+            >
+              <Text
+                style={[
+                  styles.switchText,
+                  { color: theme.colors.textSecondary },
+                  theme.typography.body,
+                ]}
+              >
+                {isSignUp
+                  ? "Already have an account? "
+                  : "Don't have an account? "}
+                <Text
+                  style={[styles.switchTextBold, { color: theme.colors.primary }]}
+                >
+                  {isSignUp ? "Sign In" : "Sign Up"}
+                </Text>
+              </Text>
+            </TouchableOpacity>
+          </View>
+
+          {/* Footer */}
+          <View style={styles.footer}>
+            <Text
+              style={[
+                styles.footerText,
+                { color: theme.colors.textTertiary },
+                theme.typography.caption,
+              ]}
+            >
+              By continuing, you agree to our Terms of Service and Privacy Policy
+            </Text>
+          </View>
+        </View>
+      </KeyboardAvoidingView>
+    </SafeAreaView>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#f5f5f5",
   },
-  formContainer: {
+  keyboardView: {
+    flex: 1,
+  },
+  content: {
     flex: 1,
     justifyContent: "center",
-    padding: 20,
+    paddingHorizontal: 24,
+    paddingVertical: 32,
+  },
+  brandSection: {
+    alignItems: "center",
+    marginBottom: 48,
+  },
+  logoContainer: {
+    width: 80,
+    height: 80,
+    borderRadius: 20,
+    justifyContent: "center",
+    alignItems: "center",
+    marginBottom: 24,
+  },
+  logoText: {
+    fontSize: 40,
+    fontWeight: "700",
+    letterSpacing: -1,
   },
   title: {
-    fontSize: 24,
-    fontWeight: "bold",
-    color: "#0084ff",
+    marginBottom: 8,
+  },
+  subtitle: {
     textAlign: "center",
-    marginBottom: 30,
+  },
+  formSection: {
+    marginBottom: 32,
+  },
+  inputContainer: {
+    marginBottom: 20,
+  },
+  inputLabel: {
+    marginBottom: 8,
+    marginLeft: 4,
+    letterSpacing: 1,
   },
   input: {
-    backgroundColor: "#fff",
-    padding: 15,
-    borderRadius: 10,
-    marginBottom: 15,
+    paddingVertical: 16,
+    paddingHorizontal: 16,
+    borderRadius: 12,
     fontSize: 16,
   },
-  button: {
-    backgroundColor: "#0084ff",
-    padding: 15,
-    borderRadius: 10,
+  primaryButton: {
+    paddingVertical: 16,
+    borderRadius: 12,
     alignItems: "center",
-    marginBottom: 10,
+    marginTop: 8,
   },
-  signUpButton: {
-    backgroundColor: "#2ecc71",
+  primaryButtonText: {
+    // Typography applied via theme
   },
-  buttonDisabled: {
-    opacity: 0.7,
+  switchButton: {
+    marginTop: 24,
+    alignItems: "center",
   },
-  buttonText: {
-    color: "#fff",
-    fontSize: 16,
-    fontWeight: "bold",
+  switchText: {
+    textAlign: "center",
+  },
+  switchTextBold: {
+    fontWeight: "600",
+  },
+  footer: {
+    alignItems: "center",
+    paddingHorizontal: 16,
+  },
+  footerText: {
+    textAlign: "center",
+    lineHeight: 18,
   },
 });
 

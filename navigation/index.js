@@ -6,7 +6,6 @@ import { createDrawerNavigator } from "@react-navigation/drawer";
 import { Ionicons } from "@expo/vector-icons";
 import { useTheme } from "../context/ThemeContext";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-
 // Import screens
 import DrawerContent from "../components/DrawerContent";
 import Chat from "../pages/Chat";
@@ -16,6 +15,7 @@ import Tips from "../pages/Tips";
 import ConversationHistory from "../pages/ConversationHistory";
 import PartnerSelection from "../pages/PartnerSelection";
 import Login from "../pages/Login";
+import Subscription from "../pages/Subscription";
 
 const Stack = createStackNavigator();
 const Drawer = createDrawerNavigator();
@@ -29,7 +29,9 @@ function CustomHeader({ navigation, route, options }) {
     <View
       style={{
         paddingTop: Platform.OS === "ios" ? insets.top : 0,
-        backgroundColor: theme?.colors?.primary || "#FF0000",
+        backgroundColor: theme.colors.background,
+        borderBottomWidth: 1,
+        borderBottomColor: theme.colors.border,
       }}
     >
       <View
@@ -37,32 +39,30 @@ function CustomHeader({ navigation, route, options }) {
           height: 56,
           flexDirection: "row",
           alignItems: "center",
-          backgroundColor: theme?.colors?.primary || "#FF0000",
+          backgroundColor: theme.colors.background,
           paddingHorizontal: 16,
-          elevation: 4,
-          shadowColor: "#000",
-          shadowOffset: { width: 0, height: 2 },
-          shadowOpacity: 0.25,
-          shadowRadius: 3.84,
         }}
       >
         <TouchableOpacity
           onPress={navigation.toggleDrawer}
           style={{
-            width: 40,
-            height: 40,
+            width: 44,
+            height: 44,
             justifyContent: "center",
             alignItems: "center",
+            borderRadius: 12,
+            backgroundColor: theme.colors.backgroundTertiary,
           }}
         >
-          <Ionicons name="menu" size={24} color="#FFFFFF" />
+          <Ionicons name="menu" size={24} color={theme.colors.textPrimary} />
         </TouchableOpacity>
         <Text
           style={{
             marginLeft: 16,
-            color: "#FFFFFF",
+            color: theme.colors.textPrimary,
             fontSize: 18,
             fontWeight: "600",
+            letterSpacing: 0,
           }}
         >
           {title}
@@ -77,14 +77,16 @@ function DrawerNavigator() {
 
   const drawerScreenOptions = {
     drawerStyle: {
-      backgroundColor: theme?.colors?.background || "#FFFFFF",
+      backgroundColor: theme.colors.background,
+      width: 280,
     },
-    drawerActiveBackgroundColor: theme?.colors?.primary || "#FF0000",
-    drawerActiveTintColor: "#FFFFFF",
-    drawerInactiveTintColor: theme?.colors?.textSecondary || "#666666",
+    drawerActiveBackgroundColor: theme.colors.backgroundTertiary,
+    drawerActiveTintColor: theme.colors.textPrimary,
+    drawerInactiveTintColor: theme.colors.textSecondary,
     drawerLabelStyle: {
-      marginLeft: -20,
+      marginLeft: -16,
       fontSize: 16,
+      fontWeight: "500",
     },
     header: (props) => <CustomHeader {...props} />,
   };
@@ -99,13 +101,13 @@ function DrawerNavigator() {
         component={Chat}
         options={{
           headerShown: false,
-          title: "RizzChat",
+          title: "Poise",
           drawerIcon: ({ color, size }) => (
             <Ionicons name="chatbubble-outline" size={size} color={color} />
           ),
         }}
       />
-      {/* <Drawer.Screen
+      <Drawer.Screen
         name="Partners"
         component={PartnerSelection}
         options={{
@@ -114,7 +116,7 @@ function DrawerNavigator() {
             <Ionicons name="people-outline" size={size} color={color} />
           ),
         }}
-      /> */}
+      />
       <Drawer.Screen
         name="Profile"
         component={Profile}
@@ -149,6 +151,16 @@ function DrawerNavigator() {
         options={{
           drawerIcon: ({ color, size }) => (
             <Ionicons name="settings-outline" size={size} color={color} />
+          ),
+        }}
+      />
+      <Drawer.Screen
+        name="Subscription"
+        component={Subscription}
+        options={{
+          title: "Premium",
+          drawerIcon: ({ color, size }) => (
+            <Ionicons name="diamond-outline" size={size} color={color} />
           ),
         }}
       />

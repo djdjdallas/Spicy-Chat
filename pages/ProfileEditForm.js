@@ -10,8 +10,11 @@ import {
   Alert,
 } from "react-native";
 import { Picker } from "@react-native-picker/picker";
+import { useTheme } from "../context/ThemeContext";
 
 const ProfileEditForm = ({ profile, onSave, onCancel }) => {
+  const { theme } = useTheme();
+
   const [formData, setFormData] = useState({
     full_name: profile?.full_name || "",
     display_name: profile?.display_name || "",
@@ -60,82 +63,132 @@ const ProfileEditForm = ({ profile, onSave, onCancel }) => {
   };
 
   return (
-    <ScrollView style={styles.container}>
+    <ScrollView style={[styles.container, { backgroundColor: theme.colors.background }]}>
       <View style={styles.header}>
-        <Text style={styles.heading}>Edit Profile</Text>
+        <Text style={[styles.heading, { color: theme.colors.primary }, theme.typography.h2]}>
+          Edit Profile
+        </Text>
         <View style={styles.headerButtons}>
           <TouchableOpacity
-            style={[styles.headerButton, styles.cancelButton]}
+            style={[styles.headerButton, styles.cancelButton, { backgroundColor: theme.colors.surfaceSecondary }]}
             onPress={onCancel}
           >
-            <Text style={styles.cancelButtonText}>Cancel</Text>
+            <Text style={[styles.cancelButtonText, { color: theme.colors.textSecondary }, theme.typography.buttonSmall]}>
+              Cancel
+            </Text>
           </TouchableOpacity>
           <TouchableOpacity
-            style={[styles.headerButton, styles.saveButton]}
+            style={[styles.headerButton, styles.saveButton, { backgroundColor: theme.colors.primary }]}
             onPress={handleSubmit}
           >
-            <Text style={styles.saveButtonText}>Save</Text>
+            <Text style={[styles.saveButtonText, { color: theme.colors.pureWhite }, theme.typography.buttonSmall]}>
+              Save
+            </Text>
           </TouchableOpacity>
         </View>
       </View>
 
-      <View style={styles.form}>
+      <View style={[styles.form, { backgroundColor: theme.colors.surface }]}>
         <View style={styles.formGroup}>
-          <Text style={styles.label}>Full Name *</Text>
+          <Text style={[styles.label, { color: theme.colors.textSecondary }, theme.typography.bodySmall]}>
+            Full Name *
+          </Text>
           <TextInput
-            style={styles.input}
+            style={[
+              styles.input,
+              {
+                borderColor: theme.colors.border,
+                backgroundColor: theme.colors.inputBackground,
+                color: theme.colors.textPrimary,
+              },
+            ]}
             value={formData.full_name}
             onChangeText={(text) =>
               setFormData({ ...formData, full_name: text })
             }
             placeholder="Enter your full name"
+            placeholderTextColor={theme.colors.textTertiary}
           />
         </View>
 
         <View style={styles.formGroup}>
-          <Text style={styles.label}>Display Name *</Text>
+          <Text style={[styles.label, { color: theme.colors.textSecondary }, theme.typography.bodySmall]}>
+            Display Name *
+          </Text>
           <TextInput
-            style={styles.input}
+            style={[
+              styles.input,
+              {
+                borderColor: theme.colors.border,
+                backgroundColor: theme.colors.inputBackground,
+                color: theme.colors.textPrimary,
+              },
+            ]}
             value={formData.display_name}
             onChangeText={(text) =>
               setFormData({ ...formData, display_name: text })
             }
             placeholder="Enter your display name"
+            placeholderTextColor={theme.colors.textTertiary}
           />
         </View>
 
         <View style={styles.formGroup}>
-          <Text style={styles.label}>Bio</Text>
+          <Text style={[styles.label, { color: theme.colors.textSecondary }, theme.typography.bodySmall]}>
+            Bio
+          </Text>
           <TextInput
-            style={[styles.input, styles.textArea]}
+            style={[
+              styles.input,
+              styles.textArea,
+              {
+                borderColor: theme.colors.border,
+                backgroundColor: theme.colors.inputBackground,
+                color: theme.colors.textPrimary,
+              },
+            ]}
             value={formData.bio}
             onChangeText={(text) => setFormData({ ...formData, bio: text })}
             placeholder="Tell us about yourself"
+            placeholderTextColor={theme.colors.textTertiary}
             multiline
             numberOfLines={4}
           />
         </View>
 
         <View style={styles.formGroup}>
-          <Text style={styles.label}>Age *</Text>
+          <Text style={[styles.label, { color: theme.colors.textSecondary }, theme.typography.bodySmall]}>
+            Age *
+          </Text>
           <TextInput
-            style={styles.input}
+            style={[
+              styles.input,
+              {
+                borderColor: theme.colors.border,
+                backgroundColor: theme.colors.inputBackground,
+                color: theme.colors.textPrimary,
+              },
+            ]}
             value={formData.age}
             onChangeText={(text) => setFormData({ ...formData, age: text })}
             placeholder="Enter your age"
+            placeholderTextColor={theme.colors.textTertiary}
             keyboardType="numeric"
           />
         </View>
 
         <View style={styles.formGroup}>
-          <Text style={styles.label}>Dating Goals</Text>
-          <View style={styles.pickerContainer}>
+          <Text style={[styles.label, { color: theme.colors.textSecondary }, theme.typography.bodySmall]}>
+            Dating Goals
+          </Text>
+          <View style={[styles.pickerContainer, { borderColor: theme.colors.border, backgroundColor: theme.colors.inputBackground }]}>
             <Picker
               selectedValue={formData.relationship_goal}
               onValueChange={(value) =>
                 setFormData({ ...formData, relationship_goal: value })
               }
-              style={styles.picker}
+              style={[styles.picker, { color: theme.colors.textPrimary }]}
+              dropdownIconColor={theme.colors.textSecondary}
             >
               <Picker.Item label="Not Sure Yet" value="not_sure_yet" />
               <Picker.Item
@@ -149,14 +202,17 @@ const ProfileEditForm = ({ profile, onSave, onCancel }) => {
         </View>
 
         <View style={styles.formGroup}>
-          <Text style={styles.label}>Communication Style</Text>
-          <View style={styles.pickerContainer}>
+          <Text style={[styles.label, { color: theme.colors.textSecondary }, theme.typography.bodySmall]}>
+            Communication Style
+          </Text>
+          <View style={[styles.pickerContainer, { borderColor: theme.colors.border, backgroundColor: theme.colors.inputBackground }]}>
             <Picker
               selectedValue={formData.communication_style}
               onValueChange={(value) =>
                 setFormData({ ...formData, communication_style: value })
               }
-              style={styles.picker}
+              style={[styles.picker, { color: theme.colors.textPrimary }]}
+              dropdownIconColor={theme.colors.textSecondary}
             >
               <Picker.Item label="Casual & Friendly" value="casual_friendly" />
               <Picker.Item
@@ -176,34 +232,64 @@ const ProfileEditForm = ({ profile, onSave, onCancel }) => {
         </View>
 
         <View style={styles.formGroup}>
-          <Text style={styles.label}>Interests (comma-separated)</Text>
+          <Text style={[styles.label, { color: theme.colors.textSecondary }, theme.typography.bodySmall]}>
+            Interests (comma-separated)
+          </Text>
           <TextInput
-            style={styles.input}
+            style={[
+              styles.input,
+              {
+                borderColor: theme.colors.border,
+                backgroundColor: theme.colors.inputBackground,
+                color: theme.colors.textPrimary,
+              },
+            ]}
             value={formData.interests}
             onChangeText={(text) =>
               setFormData({ ...formData, interests: text })
             }
             placeholder="e.g., Music, Travel, Food"
+            placeholderTextColor={theme.colors.textTertiary}
           />
         </View>
 
         <View style={styles.formGroup}>
-          <Text style={styles.label}>Hobbies (comma-separated)</Text>
+          <Text style={[styles.label, { color: theme.colors.textSecondary }, theme.typography.bodySmall]}>
+            Hobbies (comma-separated)
+          </Text>
           <TextInput
-            style={styles.input}
+            style={[
+              styles.input,
+              {
+                borderColor: theme.colors.border,
+                backgroundColor: theme.colors.inputBackground,
+                color: theme.colors.textPrimary,
+              },
+            ]}
             value={formData.hobbies}
             onChangeText={(text) => setFormData({ ...formData, hobbies: text })}
             placeholder="e.g., Photography, Cooking, Gaming"
+            placeholderTextColor={theme.colors.textTertiary}
           />
         </View>
 
         <View style={styles.formGroup}>
-          <Text style={styles.label}>Values (comma-separated)</Text>
+          <Text style={[styles.label, { color: theme.colors.textSecondary }, theme.typography.bodySmall]}>
+            Values (comma-separated)
+          </Text>
           <TextInput
-            style={styles.input}
+            style={[
+              styles.input,
+              {
+                borderColor: theme.colors.border,
+                backgroundColor: theme.colors.inputBackground,
+                color: theme.colors.textPrimary,
+              },
+            ]}
             value={formData.values}
             onChangeText={(text) => setFormData({ ...formData, values: text })}
             placeholder="e.g., Honesty, Kindness, Ambition"
+            placeholderTextColor={theme.colors.textTertiary}
           />
         </View>
       </View>
@@ -214,7 +300,6 @@ const ProfileEditForm = ({ profile, onSave, onCancel }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#f5f5f5",
     padding: 15,
   },
   header: {
@@ -223,11 +308,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     marginBottom: 20,
   },
-  heading: {
-    fontSize: 24,
-    fontWeight: "bold",
-    color: "#0084ff",
-  },
+  heading: {},
   headerButtons: {
     flexDirection: "row",
     gap: 10,
@@ -237,40 +318,29 @@ const styles = StyleSheet.create({
     paddingHorizontal: 15,
     borderRadius: 20,
   },
-  saveButton: {
-    backgroundColor: "#0084ff",
-  },
-  cancelButton: {
-    backgroundColor: "#f0f0f0",
-  },
+  saveButton: {},
+  cancelButton: {},
   saveButtonText: {
-    color: "#fff",
     fontWeight: "bold",
   },
   cancelButtonText: {
-    color: "#666",
     fontWeight: "bold",
   },
   form: {
-    backgroundColor: "white",
-    borderRadius: 10,
-    padding: 15,
+    borderRadius: 12,
+    padding: 16,
   },
   formGroup: {
-    marginBottom: 15,
+    marginBottom: 16,
   },
   label: {
-    fontSize: 16,
-    color: "#666",
-    marginBottom: 5,
+    marginBottom: 6,
   },
   input: {
     borderWidth: 1,
-    borderColor: "#ddd",
-    borderRadius: 8,
+    borderRadius: 10,
     padding: 12,
     fontSize: 16,
-    backgroundColor: "#fff",
   },
   textArea: {
     height: 100,
@@ -278,9 +348,8 @@ const styles = StyleSheet.create({
   },
   pickerContainer: {
     borderWidth: 1,
-    borderColor: "#ddd",
-    borderRadius: 8,
-    backgroundColor: "#fff",
+    borderRadius: 10,
+    overflow: "hidden",
   },
   picker: {
     height: 50,

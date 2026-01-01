@@ -20,7 +20,7 @@ const ContextIndicator = ({ contextChain, theme }) => {
           key={id}
           style={[
             styles.contextDot,
-            { color: `${theme.colors.primary}70` },
+            { color: theme.colors.primaryMuted },
             index === contextChain.length - 1 && {
               color: theme.colors.primary,
             },
@@ -84,9 +84,10 @@ export const MessageBubble = memo(
       >
         <Text
           style={[
-            styles.partnerName,
+            styles.senderName,
+            { color: theme.colors.textSecondary },
+            theme.typography.caption,
             isUser ? styles.userLabel : styles.assistantLabel,
-            { color: isUser ? theme.colors.primary : theme.colors.primary },
           ]}
         >
           {senderName}
@@ -98,14 +99,14 @@ export const MessageBubble = memo(
             isUser ? styles.userBubble : styles.assistantBubble,
             {
               backgroundColor: isUser
-                ? theme.colors.primary
+                ? theme.colors.black
                 : theme.colors.surface,
-              borderColor: `${theme.colors.primary}30`,
+              ...theme.shadows.sm,
             },
             isPartOfContext && {
-              borderWidth: 1,
+              borderWidth: 2,
+              borderColor: theme.colors.primary,
             },
-            { shadowColor: theme.colors.shadow },
           ]}
         >
           <Text
@@ -113,9 +114,10 @@ export const MessageBubble = memo(
               styles.messageText,
               {
                 color: isUser
-                  ? theme.colors.textInverted
+                  ? theme.colors.pureWhite
                   : theme.colors.textPrimary,
               },
+              theme.typography.body,
             ]}
           >
             {message.content}
@@ -128,9 +130,10 @@ export const MessageBubble = memo(
                   styles.timestamp,
                   {
                     color: isUser
-                      ? `${theme.colors.textInverted}70`
-                      : theme.colors.textSecondary,
+                      ? theme.colors.silver
+                      : theme.colors.textTertiary,
                   },
+                  theme.typography.caption,
                 ]}
               >
                 {formattedTime}
@@ -140,15 +143,19 @@ export const MessageBubble = memo(
 
             <TouchableOpacity
               onPress={handleCopy}
-              style={styles.copyButton}
+              style={[
+                styles.copyButton,
+                { backgroundColor: isUser ? theme.colors.charcoal : theme.colors.backgroundTertiary },
+              ]}
               hitSlop={{ top: 10, right: 10, bottom: 10, left: 10 }}
+              activeOpacity={0.7}
             >
               <Ionicons
                 name="copy-outline"
-                size={16}
+                size={14}
                 color={
                   isUser
-                    ? theme.colors.textInverted
+                    ? theme.colors.silver
                     : theme.colors.textSecondary
                 }
               />
@@ -165,8 +172,8 @@ MessageBubble.displayName = "MessageBubble";
 
 const styles = StyleSheet.create({
   messageContainer: {
-    marginVertical: 8,
-    paddingHorizontal: 8,
+    marginVertical: 6,
+    paddingHorizontal: 16,
   },
   userMessageContainer: {
     alignItems: "flex-end",
@@ -174,65 +181,59 @@ const styles = StyleSheet.create({
   assistantMessageContainer: {
     alignItems: "flex-start",
   },
-  partnerName: {
-    fontSize: 14,
-    fontWeight: "600",
+  senderName: {
     marginBottom: 4,
-    marginLeft: 12,
+    marginHorizontal: 4,
   },
   userLabel: {
-    marginRight: 12,
-    marginLeft: 0,
+    textAlign: "right",
   },
   assistantLabel: {
-    marginLeft: 12,
-    marginRight: 0,
+    textAlign: "left",
   },
   messageBubble: {
-    maxWidth: "80%",
-    minWidth: 60,
-    padding: 12,
-    borderRadius: 20,
-    elevation: 1,
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.2,
-    shadowRadius: 1.41,
+    maxWidth: "85%",
+    minWidth: 80,
+    padding: 14,
+    borderRadius: 16,
   },
   userBubble: {
-    borderBottomRightRadius: 5,
+    borderBottomRightRadius: 4,
   },
   assistantBubble: {
-    borderBottomLeftRadius: 5,
+    borderBottomLeftRadius: 4,
   },
   messageText: {
-    fontSize: 16,
-    lineHeight: 20,
-    marginBottom: 4,
+    lineHeight: 22,
+    marginBottom: 8,
   },
   messageFooter: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    marginTop: 2,
   },
   footerLeft: {
     flexDirection: "row",
     alignItems: "center",
   },
   timestamp: {
-    fontSize: 11,
+    // Typography applied via theme
   },
   contextChain: {
     flexDirection: "row",
     alignItems: "center",
-    marginLeft: 4,
+    marginLeft: 6,
   },
   contextDot: {
     fontSize: 12,
-    marginHorizontal: 2,
+    marginHorizontal: 1,
   },
   copyButton: {
-    padding: 4,
+    width: 28,
+    height: 28,
+    borderRadius: 8,
+    justifyContent: "center",
+    alignItems: "center",
     marginLeft: 8,
   },
 });

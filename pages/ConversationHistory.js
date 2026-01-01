@@ -116,7 +116,7 @@ export default function ConversationHistory() {
     if (selectedConversations.size === 0) return;
 
     Alert.alert(
-      "Delete Selected Conversations",
+      "Delete Selected",
       `Are you sure you want to delete ${selectedConversations.size} conversation(s)? This action cannot be undone.`,
       [
         {
@@ -131,7 +131,6 @@ export default function ConversationHistory() {
               setLoading(true);
               const selectedIds = Array.from(selectedConversations);
 
-              // Delete context_memory entries
               for (const conversationId of selectedIds) {
                 const { data: messages, error: messagesQueryError } =
                   await supabase
@@ -151,7 +150,6 @@ export default function ConversationHistory() {
                   if (contextDeleteError) throw contextDeleteError;
                 }
 
-                // Delete messages
                 const { error: messagesError } = await supabase
                   .from("messages")
                   .delete()
@@ -160,7 +158,6 @@ export default function ConversationHistory() {
                 if (messagesError) throw messagesError;
               }
 
-              // Delete conversations
               const { error: conversationsError } = await supabase
                 .from("conversations")
                 .delete()
@@ -174,10 +171,7 @@ export default function ConversationHistory() {
               setSelectedConversations(new Set());
               setIsSelectionMode(false);
 
-              Alert.alert(
-                "Success",
-                "Selected conversations deleted successfully"
-              );
+              Alert.alert("Success", "Selected conversations deleted");
             } catch (error) {
               console.error("Error deleting conversations:", error);
               Alert.alert("Error", "Failed to delete conversations");
@@ -206,7 +200,6 @@ export default function ConversationHistory() {
             try {
               setLoading(true);
 
-              // Delete context_memory entries first
               const { data: messages, error: messagesQueryError } =
                 await supabase
                   .from("messages")
@@ -225,7 +218,6 @@ export default function ConversationHistory() {
                 if (contextDeleteError) throw contextDeleteError;
               }
 
-              // Delete messages
               const { error: messagesError } = await supabase
                 .from("messages")
                 .delete()
@@ -233,7 +225,6 @@ export default function ConversationHistory() {
 
               if (messagesError) throw messagesError;
 
-              // Delete conversation
               const { error: conversationError } = await supabase
                 .from("conversations")
                 .delete()
@@ -244,7 +235,7 @@ export default function ConversationHistory() {
               setConversations((prev) =>
                 prev.filter((conv) => conv.id !== conversationId)
               );
-              Alert.alert("Success", "Conversation deleted successfully");
+              Alert.alert("Success", "Conversation deleted");
             } catch (error) {
               console.error("Error deleting conversation:", error);
               Alert.alert("Error", "Failed to delete conversation");
@@ -257,65 +248,114 @@ export default function ConversationHistory() {
     );
   };
 
-  const renderConversationItem = ({ item }) => (
-    <TouchableOpacity
-      style={[
-        styles.conversationItem,
-        {
-          backgroundColor: theme.colors.surface,
-          shadowColor: theme.colors.shadow,
-        },
-        selectedConversations.has(item.id) && {
-          backgroundColor: `${theme.colors.primary}15`,
-          borderColor: theme.colors.primary,
-          borderWidth: 1,
-        },
-      ]}
-      onPress={() => handleConversationPress(item.id)}
-    >
-      <View style={styles.conversationContent}>
-        {isSelectionMode && (
+  const renderConversationItem = ({ item }) => {
+    const isSelected = selectedConversations.has(item.id);
+
+    return (
+      <TouchableOpacity
+        style={[
+          styles.conversationCard,
+          {
+            backgroundColor: theme.colors.surface,
+            ...theme.shadows.sm,
+          },
+          isSelected && {
+            backgroundColor: theme.colors.primaryMuted,
+            borderWidth: 2,
+            borderColor: theme.colors.primary,
+          },
+        ]}
+        onPress={() => handleConversationPress(item.id)}
+        activeOpacity={0.7}
+      >
+        <View style={styles.cardContent}>
+          {isSelectionMode && (
+            <View
+              style={[
+                styles.checkbox,
+                {
+                  borderColor: isSelected
+                    ? theme.colors.primary
+                    : theme.colors.border,
+                  backgroundColor: isSelected
+                    ? theme.colors.primary
+                    : "transparent",
+                },
+              ]}
+            >
+              {isSelected && (
+                <Ionicons name="checkmark" size={16} color={theme.colors.pureWhite} />
+              )}
+            </View>
+          )}
+
           <View
-            style={[styles.checkbox, { borderColor: theme.colors.primary }]}
-          >
-            {selectedConversations.has(item.id) && (
-              <Ionicons
-                name="checkmark-circle"
-                size={24}
-                color={theme.colors.primary}
-              />
-            )}
-          </View>
-        )}
-        <View style={styles.textContent}>
-          <Text style={[styles.title, { color: theme.colors.textPrimary }]}>
-            {item.title}
-          </Text>
-          <Text style={[styles.date, { color: theme.colors.textSecondary }]}>
-            {item.date}
-          </Text>
-          <Text
-            style={[styles.preview, { color: theme.colors.textPrimary }]}
-            numberOfLines={2}
-          >
-            {item.preview}
-          </Text>
-        </View>
-        {!isSelectionMode && (
-          <TouchableOpacity
-            style={styles.deleteButton}
-            onPress={() => handleDelete(item.id)}
+            style={[
+              styles.iconContainer,
+              { backgroundColor: theme.colors.backgroundTertiary },
+            ]}
           >
             <Ionicons
-              name="trash-outline"
-              size={24}
-              color={theme.colors.error}
+              name="chatbubble-outline"
+              size={20}
+              color={theme.colors.textSecondary}
             />
-          </TouchableOpacity>
-        )}
-      </View>
-    </TouchableOpacity>
-  );
+          </View>
+
+          <View style={styles.textContent}>
+            <View style={styles.titleRow}>
+              <Text
+                style={[
+                  styles.title,
+                  { color: theme.colors.textPrimary },
+                  theme.typography.h4,
+                ]}
+                numberOfLines={1}
+              >
+                {item.title}
+              </Text>
+              <Text
+                style={[
+                  styles.date,
+                  { color: theme.colors.textTertiary },
+                  theme.typography.caption,
+                ]}
+              >
+                {item.date}
+              </Text>
+            </View>
+            <Text
+              style={[
+                styles.preview,
+                { color: theme.colors.textSecondary },
+                theme.typography.bodySmall,
+              ]}
+              numberOfLines={2}
+            >
+              {item.preview}
+            </Text>
+          </View>
+
+          {!isSelectionMode && (
+            <TouchableOpacity
+              style={[
+                styles.deleteButton,
+                { backgroundColor: theme.colors.errorMuted },
+              ]}
+              onPress={() => handleDelete(item.id)}
+              activeOpacity={0.7}
+            >
+              <Ionicons
+                name="trash-outline"
+                size={18}
+                color={theme.colors.error}
+              />
+            </TouchableOpacity>
+          )}
+        </View>
+      </TouchableOpacity>
+    );
+  };
 
   if (loading) {
     return (
@@ -335,18 +375,50 @@ export default function ConversationHistory() {
       style={[styles.container, { backgroundColor: theme.colors.background }]}
     >
       <View style={styles.header}>
-        <Text style={[styles.heading, { color: theme.colors.primary }]}>
-          Conversation History
-        </Text>
+        <View>
+          <Text
+            style={[
+              styles.heading,
+              { color: theme.colors.textPrimary },
+              theme.typography.h2,
+            ]}
+          >
+            History
+          </Text>
+          <Text
+            style={[
+              styles.subtitle,
+              { color: theme.colors.textSecondary },
+              theme.typography.bodySmall,
+            ]}
+          >
+            {conversations.length} conversation{conversations.length !== 1 ? "s" : ""}
+          </Text>
+        </View>
         {conversations.length > 0 && (
           <TouchableOpacity
             style={[
               styles.selectButton,
-              { backgroundColor: theme.colors.primary },
+              {
+                backgroundColor: isSelectionMode
+                  ? theme.colors.primary
+                  : theme.colors.backgroundTertiary,
+              },
             ]}
             onPress={toggleSelectionMode}
+            activeOpacity={0.7}
           >
-            <Text style={{ color: theme.colors.textInverted }}>
+            <Text
+              style={[
+                styles.selectButtonText,
+                {
+                  color: isSelectionMode
+                    ? theme.colors.pureWhite
+                    : theme.colors.textPrimary,
+                },
+                theme.typography.button,
+              ]}
+            >
               {isSelectionMode ? "Cancel" : "Select"}
             </Text>
           </TouchableOpacity>
@@ -359,12 +431,16 @@ export default function ConversationHistory() {
             styles.selectionBar,
             {
               backgroundColor: theme.colors.surface,
-              shadowColor: theme.colors.shadow,
+              ...theme.shadows.sm,
             },
           ]}
         >
           <Text
-            style={[styles.selectedCount, { color: theme.colors.textPrimary }]}
+            style={[
+              styles.selectedCount,
+              { color: theme.colors.textPrimary },
+              theme.typography.body,
+            ]}
           >
             {selectedConversations.size} selected
           </Text>
@@ -374,19 +450,21 @@ export default function ConversationHistory() {
               { backgroundColor: theme.colors.error },
             ]}
             onPress={handleDeleteSelected}
+            activeOpacity={0.85}
           >
             <Ionicons
               name="trash-outline"
-              size={24}
-              color={theme.colors.textInverted}
+              size={18}
+              color={theme.colors.pureWhite}
             />
             <Text
               style={[
                 styles.deleteSelectedText,
-                { color: theme.colors.textInverted },
+                { color: theme.colors.pureWhite },
+                theme.typography.button,
               ]}
             >
-              Delete Selected
+              Delete
             </Text>
           </TouchableOpacity>
         </View>
@@ -394,14 +472,54 @@ export default function ConversationHistory() {
 
       {conversations.length === 0 ? (
         <View style={styles.emptyState}>
-          <Text
+          <View
             style={[
-              styles.emptyStateText,
-              { color: theme.colors.textSecondary },
+              styles.emptyIcon,
+              { backgroundColor: theme.colors.backgroundTertiary },
             ]}
           >
-            No conversations yet
+            <Ionicons
+              name="chatbubbles-outline"
+              size={48}
+              color={theme.colors.textTertiary}
+            />
+          </View>
+          <Text
+            style={[
+              styles.emptyTitle,
+              { color: theme.colors.textPrimary },
+              theme.typography.h4,
+            ]}
+          >
+            No Conversations Yet
           </Text>
+          <Text
+            style={[
+              styles.emptyDescription,
+              { color: theme.colors.textSecondary },
+              theme.typography.body,
+            ]}
+          >
+            Start a new chat to begin practicing your conversation skills
+          </Text>
+          <TouchableOpacity
+            style={[
+              styles.startChatButton,
+              { backgroundColor: theme.colors.primary },
+            ]}
+            onPress={() => navigation.navigate("Chat")}
+            activeOpacity={0.85}
+          >
+            <Text
+              style={[
+                styles.startChatText,
+                { color: theme.colors.pureWhite },
+                theme.typography.button,
+              ]}
+            >
+              Start a Chat
+            </Text>
+          </TouchableOpacity>
         </View>
       ) : (
         <FlatList
@@ -411,6 +529,7 @@ export default function ConversationHistory() {
           contentContainerStyle={styles.listContent}
           refreshing={loading}
           onRefresh={fetchConversations}
+          showsVerticalScrollIndicator={false}
         />
       )}
     </View>
@@ -420,7 +539,7 @@ export default function ConversationHistory() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    padding: 15,
+    padding: 16,
   },
   loadingContainer: {
     flex: 1,
@@ -430,97 +549,129 @@ const styles = StyleSheet.create({
   header: {
     flexDirection: "row",
     justifyContent: "space-between",
-    alignItems: "center",
+    alignItems: "flex-start",
     marginBottom: 20,
   },
   heading: {
-    fontSize: 24,
-    fontWeight: "bold",
+    marginBottom: 4,
+  },
+  subtitle: {
+    // Typography applied via theme
   },
   selectButton: {
-    paddingVertical: 8,
-    paddingHorizontal: 16,
-    borderRadius: 8,
+    paddingVertical: 10,
+    paddingHorizontal: 18,
+    borderRadius: 10,
+  },
+  selectButtonText: {
+    // Typography applied via theme
   },
   selectionBar: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    padding: 15,
+    padding: 14,
     borderRadius: 12,
-    marginBottom: 15,
-    elevation: 2,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 3.84,
+    marginBottom: 16,
   },
   selectedCount: {
-    fontSize: 16,
-    fontWeight: "500",
+    // Typography applied via theme
   },
   deleteSelectedButton: {
     flexDirection: "row",
     alignItems: "center",
-    padding: 8,
-    borderRadius: 8,
-    gap: 8,
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+    borderRadius: 10,
+    gap: 6,
   },
   deleteSelectedText: {
-    fontSize: 16,
-    fontWeight: "500",
+    // Typography applied via theme
   },
   listContent: {
-    flexGrow: 1,
+    paddingBottom: 24,
+    gap: 12,
   },
-  conversationItem: {
-    padding: 15,
-    borderRadius: 12,
-    marginBottom: 10,
-    elevation: 2,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 3.84,
+  conversationCard: {
+    borderRadius: 16,
+    padding: 16,
   },
-  conversationContent: {
-    flex: 1,
+  cardContent: {
     flexDirection: "row",
-    alignItems: "flex-start",
-  },
-  textContent: {
-    flex: 1,
+    alignItems: "center",
   },
   checkbox: {
     width: 24,
     height: 24,
-    marginRight: 12,
     borderWidth: 2,
+    borderRadius: 8,
+    justifyContent: "center",
+    alignItems: "center",
+    marginRight: 12,
+  },
+  iconContainer: {
+    width: 44,
+    height: 44,
     borderRadius: 12,
     justifyContent: "center",
     alignItems: "center",
   },
-  deleteButton: {
-    padding: 8,
-    marginLeft: 10,
+  textContent: {
+    flex: 1,
+    marginLeft: 12,
+  },
+  titleRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 4,
   },
   title: {
-    fontSize: 18,
-    fontWeight: "bold",
-    marginBottom: 5,
+    flex: 1,
+    marginRight: 8,
   },
   date: {
-    fontSize: 14,
-    marginBottom: 5,
+    // Typography applied via theme
   },
   preview: {
-    fontSize: 16,
-    marginTop: 5,
+    lineHeight: 20,
+  },
+  deleteButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 10,
+    justifyContent: "center",
+    alignItems: "center",
+    marginLeft: 12,
   },
   emptyState: {
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
+    paddingHorizontal: 32,
   },
-  emptyStateText: {
-    fontSize: 16,
+  emptyIcon: {
+    width: 96,
+    height: 96,
+    borderRadius: 48,
+    justifyContent: "center",
+    alignItems: "center",
+    marginBottom: 24,
+  },
+  emptyTitle: {
+    marginBottom: 8,
+    textAlign: "center",
+  },
+  emptyDescription: {
+    textAlign: "center",
+    marginBottom: 24,
+  },
+  startChatButton: {
+    paddingVertical: 14,
+    paddingHorizontal: 32,
+    borderRadius: 12,
+  },
+  startChatText: {
+    // Typography applied via theme
   },
 });
