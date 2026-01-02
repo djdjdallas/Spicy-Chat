@@ -1,8 +1,8 @@
 {
   "expo": {
     "name": "Poise",
-    "slug": "ChatBot",
-    "version": "1.0.2",
+    "slug": "poise",
+    "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "automatic",
@@ -100,8 +100,7 @@
         "expo-build-properties",
         {
           "ios": {
-            "useFrameworks": "static",
-            "deploymentTarget": "15.1"
+            "useFrameworks": "static"
           }
         }
       ]

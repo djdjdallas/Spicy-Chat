@@ -8,9 +8,152 @@ import {
   TextInput,
   TouchableOpacity,
   Alert,
+  Modal,
 } from "react-native";
-import { Picker } from "@react-native-picker/picker";
+import { Ionicons } from "@expo/vector-icons";
 import { useTheme } from "../context/ThemeContext";
+
+const DATING_GOALS = [
+  { label: "Exploring", value: "exploring" },
+  { label: "Open Relationship", value: "open_relationship" },
+  { label: "Polyamorous", value: "polyamorous" },
+  { label: "Swinger", value: "swinger" },
+  { label: "Monogamous", value: "monogamous" },
+  { label: "Friends with Benefits", value: "fwb" },
+];
+
+const COMMUNICATION_STYLES = [
+  { label: "Flirty & Playful", value: "flirty_playful" },
+  { label: "Direct & Confident", value: "direct_confident" },
+  { label: "Slow & Sensual", value: "slow_sensual" },
+  { label: "Witty & Teasing", value: "witty_teasing" },
+  { label: "Sweet & Romantic", value: "sweet_romantic" },
+];
+
+const PLATFORMS = [
+  { id: "feeld", name: "Feeld" },
+  { id: "tinder", name: "Tinder" },
+  { id: "hinge", name: "Hinge" },
+  { id: "bumble", name: "Bumble" },
+  { id: "okcupid", name: "OkCupid" },
+  { id: "3fun", name: "3Fun" },
+  { id: "other", name: "Other" },
+];
+
+const DropdownSelect = ({ label, value, options, onSelect, theme }) => {
+  const [modalVisible, setModalVisible] = useState(false);
+  const selectedOption = options.find((opt) => opt.value === value);
+
+  return (
+    <>
+      <TouchableOpacity
+        style={[
+          styles.dropdownButton,
+          {
+            borderColor: theme.colors.border,
+            backgroundColor: theme.colors.inputBackground,
+          },
+        ]}
+        onPress={() => setModalVisible(true)}
+        activeOpacity={0.7}
+      >
+        <Text
+          style={[
+            styles.dropdownButtonText,
+            { color: theme.colors.textPrimary },
+          ]}
+        >
+          {selectedOption?.label || "Select..."}
+        </Text>
+        <Ionicons
+          name="chevron-down"
+          size={20}
+          color={theme.colors.textSecondary}
+        />
+      </TouchableOpacity>
+
+      <Modal
+        visible={modalVisible}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setModalVisible(false)}
+      >
+        <TouchableOpacity
+          style={styles.modalOverlay}
+          activeOpacity={1}
+          onPress={() => setModalVisible(false)}
+        >
+          <View
+            style={[
+              styles.modalContent,
+              { backgroundColor: theme.colors.surface },
+            ]}
+          >
+            <View style={styles.modalHeader}>
+              <Text
+                style={[
+                  styles.modalTitle,
+                  { color: theme.colors.textPrimary },
+                ]}
+              >
+                {label}
+              </Text>
+              <TouchableOpacity onPress={() => setModalVisible(false)}>
+                <Ionicons
+                  name="close"
+                  size={24}
+                  color={theme.colors.textSecondary}
+                />
+              </TouchableOpacity>
+            </View>
+            <ScrollView style={styles.optionsList}>
+              {options.map((option) => (
+                <TouchableOpacity
+                  key={option.value}
+                  style={[
+                    styles.optionItem,
+                    {
+                      backgroundColor:
+                        value === option.value
+                          ? theme.colors.primaryMuted
+                          : "transparent",
+                    },
+                  ]}
+                  onPress={() => {
+                    onSelect(option.value);
+                    setModalVisible(false);
+                  }}
+                >
+                  <Text
+                    style={[
+                      styles.optionText,
+                      {
+                        color:
+                          value === option.value
+                            ? theme.colors.primary
+                            : theme.colors.textPrimary,
+                        fontWeight: value === option.value ? "600" : "400",
+                      },
+                    ]}
+                  >
+                    {option.label}
+                  </Text>
+                  {value === option.value && (
+                    <Ionicons
+                      name="checkmark"
+                      size={20}
+                      color={theme.colors.primary}
+                    />
+                  )}
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
+          </View>
+        </TouchableOpacity>
+      </Modal>
+    </>
+  );
+};
 
 const ProfileEditForm = ({ profile, onSave, onCancel }) => {
   const { theme } = useTheme();
@@ -20,12 +163,30 @@ const ProfileEditForm = ({ profile, onSave, onCancel }) => {
     display_name: profile?.display_name || "",
     bio: profile?.bio || "",
     age: profile?.age?.toString() || "",
-    relationship_goal: profile?.relationship_goal || "not_sure_yet",
-    communication_style: profile?.communication_style || "casual_friendly",
+    relationship_goal: profile?.relationship_goal || "exploring",
+    communication_style: profile?.communication_style || "flirty_playful",
     interests: profile?.interests?.join(", ") || "",
     hobbies: profile?.hobbies?.join(", ") || "",
     values: profile?.values?.join(", ") || "",
+    preferred_platforms: profile?.preferred_platforms || [],
   });
+
+  const togglePlatform = (platformId) => {
+    setFormData((prev) => {
+      const platforms = prev.preferred_platforms || [];
+      if (platforms.includes(platformId)) {
+        return {
+          ...prev,
+          preferred_platforms: platforms.filter((p) => p !== platformId),
+        };
+      } else {
+        return {
+          ...prev,
+          preferred_platforms: [...platforms, platformId],
+        };
+      }
+    });
+  };
 
   const handleSubmit = () => {
     // Validate required fields
@@ -43,8 +204,12 @@ const ProfileEditForm = ({ profile, onSave, onCancel }) => {
 
     // Convert comma-separated strings to arrays
     const processedData = {
-      ...formData,
+      full_name: formData.full_name,
+      display_name: formData.display_name,
+      bio: formData.bio,
       age,
+      relationship_goal: formData.relationship_goal,
+      communication_style: formData.communication_style,
       interests: formData.interests
         .split(",")
         .map((item) => item.trim())
@@ -57,6 +222,7 @@ const ProfileEditForm = ({ profile, onSave, onCancel }) => {
         .split(",")
         .map((item) => item.trim())
         .filter(Boolean),
+      preferred_platforms: formData.preferred_platforms,
     };
 
     onSave(processedData);
@@ -181,54 +347,30 @@ const ProfileEditForm = ({ profile, onSave, onCancel }) => {
           <Text style={[styles.label, { color: theme.colors.textSecondary }, theme.typography.bodySmall]}>
             Dating Goals
           </Text>
-          <View style={[styles.pickerContainer, { borderColor: theme.colors.border, backgroundColor: theme.colors.inputBackground }]}>
-            <Picker
-              selectedValue={formData.relationship_goal}
-              onValueChange={(value) =>
-                setFormData({ ...formData, relationship_goal: value })
-              }
-              style={[styles.picker, { color: theme.colors.textPrimary }]}
-              dropdownIconColor={theme.colors.textSecondary}
-            >
-              <Picker.Item label="Not Sure Yet" value="not_sure_yet" />
-              <Picker.Item
-                label="Long Term Relationship"
-                value="long_term_relationship"
-              />
-              <Picker.Item label="Casual Dating" value="casual_dating" />
-              <Picker.Item label="Friendship" value="friendship" />
-            </Picker>
-          </View>
+          <DropdownSelect
+            label="Dating Goals"
+            value={formData.relationship_goal}
+            options={DATING_GOALS}
+            onSelect={(value) =>
+              setFormData({ ...formData, relationship_goal: value })
+            }
+            theme={theme}
+          />
         </View>
 
         <View style={styles.formGroup}>
           <Text style={[styles.label, { color: theme.colors.textSecondary }, theme.typography.bodySmall]}>
             Communication Style
           </Text>
-          <View style={[styles.pickerContainer, { borderColor: theme.colors.border, backgroundColor: theme.colors.inputBackground }]}>
-            <Picker
-              selectedValue={formData.communication_style}
-              onValueChange={(value) =>
-                setFormData({ ...formData, communication_style: value })
-              }
-              style={[styles.picker, { color: theme.colors.textPrimary }]}
-              dropdownIconColor={theme.colors.textSecondary}
-            >
-              <Picker.Item label="Casual & Friendly" value="casual_friendly" />
-              <Picker.Item
-                label="Direct & Straightforward"
-                value="direct_straightforward"
-              />
-              <Picker.Item
-                label="Thoughtful & Reserved"
-                value="thoughtful_reserved"
-              />
-              <Picker.Item
-                label="Playful & Humorous"
-                value="playful_humorous"
-              />
-            </Picker>
-          </View>
+          <DropdownSelect
+            label="Communication Style"
+            value={formData.communication_style}
+            options={COMMUNICATION_STYLES}
+            onSelect={(value) =>
+              setFormData({ ...formData, communication_style: value })
+            }
+            theme={theme}
+          />
         </View>
 
         <View style={styles.formGroup}>
@@ -292,6 +434,56 @@ const ProfileEditForm = ({ profile, onSave, onCancel }) => {
             placeholderTextColor={theme.colors.textTertiary}
           />
         </View>
+
+        <View style={styles.formGroup}>
+          <Text style={[styles.label, { color: theme.colors.textSecondary }, theme.typography.bodySmall]}>
+            Preferred Dating Platforms
+          </Text>
+          <View style={styles.platformsContainer}>
+            {PLATFORMS.map((platform) => {
+              const isSelected = formData.preferred_platforms?.includes(platform.id);
+              return (
+                <TouchableOpacity
+                  key={platform.id}
+                  style={[
+                    styles.platformChip,
+                    {
+                      backgroundColor: isSelected
+                        ? theme.colors.primary
+                        : theme.colors.inputBackground,
+                      borderColor: isSelected
+                        ? theme.colors.primary
+                        : theme.colors.border,
+                    },
+                  ]}
+                  onPress={() => togglePlatform(platform.id)}
+                  activeOpacity={0.7}
+                >
+                  {isSelected && (
+                    <Ionicons
+                      name="checkmark"
+                      size={16}
+                      color={theme.colors.pureWhite}
+                      style={styles.checkIcon}
+                    />
+                  )}
+                  <Text
+                    style={[
+                      styles.platformChipText,
+                      {
+                        color: isSelected
+                          ? theme.colors.pureWhite
+                          : theme.colors.textPrimary,
+                      },
+                    ]}
+                  >
+                    {platform.name}
+                  </Text>
+                </TouchableOpacity>
+              );
+            })}
+          </View>
+        </View>
       </View>
     </ScrollView>
   );
@@ -346,13 +538,73 @@ const styles = StyleSheet.create({
     height: 100,
     textAlignVertical: "top",
   },
-  pickerContainer: {
+  dropdownButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
     borderWidth: 1,
     borderRadius: 10,
+    padding: 12,
+  },
+  dropdownButtonText: {
+    fontSize: 16,
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(0, 0, 0, 0.5)",
+    justifyContent: "center",
+    alignItems: "center",
+    padding: 24,
+  },
+  modalContent: {
+    width: "100%",
+    maxHeight: "60%",
+    borderRadius: 16,
     overflow: "hidden",
   },
-  picker: {
-    height: 50,
+  modalHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    padding: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: "rgba(0, 0, 0, 0.1)",
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: "600",
+  },
+  optionsList: {
+    maxHeight: 300,
+  },
+  optionItem: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    padding: 16,
+  },
+  optionText: {
+    fontSize: 16,
+  },
+  platformsContainer: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 8,
+  },
+  platformChip: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingVertical: 8,
+    paddingHorizontal: 14,
+    borderRadius: 20,
+    borderWidth: 1,
+  },
+  platformChipText: {
+    fontSize: 14,
+    fontWeight: "500",
+  },
+  checkIcon: {
+    marginRight: 4,
   },
 });
 

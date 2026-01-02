@@ -22,9 +22,10 @@ export const MessageInput = memo(({ sendMessage, isLoading }) => {
 
   const handleSend = useCallback(() => {
     if (localInputText.trim()) {
-      Keyboard.dismiss();
-      sendMessage(localInputText);
+      const messageToSend = localInputText;
       setLocalInputText("");
+      Keyboard.dismiss();
+      sendMessage(messageToSend);
     }
   }, [localInputText, sendMessage]);
 

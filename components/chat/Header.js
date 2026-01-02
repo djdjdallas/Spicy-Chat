@@ -23,6 +23,10 @@ export const ChatHeader = ({ onNewChat, title = "Poise" }) => {
     }
   };
 
+  const handleScreenshotAnalysis = () => {
+    navigation.navigate("ScreenshotAnalysis");
+  };
+
   return (
     <View
       style={[
@@ -54,20 +58,36 @@ export const ChatHeader = ({ onNewChat, title = "Poise" }) => {
         </Text>
       </View>
 
-      <TouchableOpacity
-        style={[
-          styles.menuButton,
-          { backgroundColor: theme.colors.charcoal },
-        ]}
-        onPress={handleNewChat}
-        activeOpacity={0.7}
-      >
-        <Ionicons
-          name="add"
-          size={22}
-          color={theme.colors.pureWhite}
-        />
-      </TouchableOpacity>
+      <View style={styles.rightButtons}>
+        <TouchableOpacity
+          style={[
+            styles.menuButton,
+            { backgroundColor: theme.colors.charcoal },
+          ]}
+          onPress={handleScreenshotAnalysis}
+          activeOpacity={0.7}
+        >
+          <Ionicons
+            name="camera"
+            size={20}
+            color={theme.colors.pureWhite}
+          />
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={[
+            styles.menuButton,
+            { backgroundColor: theme.colors.charcoal },
+          ]}
+          onPress={handleNewChat}
+          activeOpacity={0.7}
+        >
+          <Ionicons
+            name="add"
+            size={22}
+            color={theme.colors.pureWhite}
+          />
+        </TouchableOpacity>
+      </View>
     </View>
   );
 };
@@ -87,6 +107,11 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     borderRadius: 12,
+  },
+  rightButtons: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
   },
   titleContainer: {
     flexDirection: "row",

@@ -48,7 +48,9 @@ export const PartnerSelection = ({ navigation }) => {
         );
       }
     } catch (error) {
-      console.error("Error checking subscription:", error);
+      if (__DEV__) {
+        console.error("Error checking subscription:", error);
+      }
     } finally {
       setIsLoading(false);
     }
@@ -86,7 +88,7 @@ export const PartnerSelection = ({ navigation }) => {
         .from("conversations")
         .insert({
           title: `Chat with ${partner.name}`,
-          model: partner.model || "default",
+          model: partner.model || "cognitivecomputations/dolphin-2.9.2-qwen2-72b",
           user_id: user.id,
           last_message_at: new Date().toISOString(),
           partner_id: partner.id,
@@ -108,7 +110,9 @@ export const PartnerSelection = ({ navigation }) => {
         forceNew: true,
       });
     } catch (error) {
-      console.error("Error selecting partner:", error);
+      if (__DEV__) {
+        console.error("Error selecting partner:", error);
+      }
       Alert.alert(
         "Error",
         "Failed to start conversation with partner. Please try again."

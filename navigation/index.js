@@ -1,11 +1,12 @@
 // navigation/index.js
 import React from "react";
-import { View, Text, TouchableOpacity, Platform } from "react-native";
+import { View, Text, TouchableOpacity, Platform, ActivityIndicator } from "react-native";
 import { createStackNavigator } from "@react-navigation/stack";
 import { createDrawerNavigator } from "@react-navigation/drawer";
 import { Ionicons } from "@expo/vector-icons";
 import { useTheme } from "../context/ThemeContext";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { useOnboarding } from "../hooks/useOnboarding";
 // Import screens
 import DrawerContent from "../components/DrawerContent";
 import Chat from "../pages/Chat";
@@ -16,9 +17,14 @@ import ConversationHistory from "../pages/ConversationHistory";
 import PartnerSelection from "../pages/PartnerSelection";
 import Login from "../pages/Login";
 import Subscription from "../pages/Subscription";
+import OnboardingScreen from "../Onboarding";
+import OnboardingProfile from "../pages/OnboardingProfile";
+import OnboardingPartner from "../pages/OnboardingPartner";
+import ScreenshotAnalysis from "../pages/ScreenshotAnalysis";
 
 const Stack = createStackNavigator();
 const Drawer = createDrawerNavigator();
+const OnboardingStack = createStackNavigator();
 
 function CustomHeader({ navigation, route, options }) {
   const insets = useSafeAreaInsets();
@@ -118,6 +124,16 @@ function DrawerNavigator() {
         }}
       />
       <Drawer.Screen
+        name="ScreenshotAnalysis"
+        component={ScreenshotAnalysis}
+        options={{
+          title: "Screenshot Analysis",
+          drawerIcon: ({ color, size }) => (
+            <Ionicons name="camera-outline" size={size} color={color} />
+          ),
+        }}
+      />
+      <Drawer.Screen
         name="Profile"
         component={Profile}
         options={{
@@ -168,7 +184,68 @@ function DrawerNavigator() {
   );
 }
 
+function OnboardingNavigator() {
+  const { completeCarousel, completeProfile, completePartner } = useOnboarding();
+
+  return (
+    <OnboardingStack.Navigator
+      screenOptions={{
+        headerShown: false,
+      }}
+    >
+      <OnboardingStack.Screen name="OnboardingCarousel">
+        {(props) => (
+          <OnboardingScreen
+            {...props}
+            onComplete={() => {
+              completeCarousel();
+              props.navigation.navigate("OnboardingProfileSetup");
+            }}
+          />
+        )}
+      </OnboardingStack.Screen>
+      <OnboardingStack.Screen name="OnboardingProfileSetup">
+        {(props) => (
+          <OnboardingProfile
+            {...props}
+            onComplete={() => {
+              completeProfile();
+              props.navigation.navigate("OnboardingPartnerSetup");
+            }}
+          />
+        )}
+      </OnboardingStack.Screen>
+      <OnboardingStack.Screen name="OnboardingPartnerSetup">
+        {(props) => (
+          <OnboardingPartner
+            {...props}
+            onComplete={completePartner}
+          />
+        )}
+      </OnboardingStack.Screen>
+    </OnboardingStack.Navigator>
+  );
+}
+
 export function RootNavigator({ userSession }) {
+  const { theme } = useTheme();
+  const { isLoading, hasCompletedOnboarding } = useOnboarding();
+
+  if (isLoading) {
+    return (
+      <View
+        style={{
+          flex: 1,
+          justifyContent: "center",
+          alignItems: "center",
+          backgroundColor: theme.colors.background,
+        }}
+      >
+        <ActivityIndicator size="large" color={theme.colors.primary} />
+      </View>
+    );
+  }
+
   return (
     <Stack.Navigator
       screenOptions={{
@@ -183,6 +260,8 @@ export function RootNavigator({ userSession }) {
             animationTypeForReplace: !userSession ? "pop" : "push",
           }}
         />
+      ) : !hasCompletedOnboarding ? (
+        <Stack.Screen name="Onboarding" component={OnboardingNavigator} />
       ) : (
         <Stack.Screen name="DrawerNavigator" component={DrawerNavigator} />
       )}

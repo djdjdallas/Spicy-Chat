@@ -8,6 +8,7 @@ import { SafeAreaProvider } from "react-native-safe-area-context";
 import { supabase } from "./lib/supabase";
 import { ThemeProvider, useTheme } from "./context/ThemeContext";
 import RootNavigator from "./navigation";
+import ErrorBoundary from "./components/ErrorBoundary";
 
 function LoadingScreen() {
   const { theme } = useTheme();
@@ -71,13 +72,15 @@ function NavigationWrapper() {
 
 export default function App() {
   return (
-    <SafeAreaProvider>
-      <ThemeProvider>
-        <PaperProvider>
-          <StatusBar barStyle="light-content" backgroundColor="#FF0000" />
-          <NavigationWrapper />
-        </PaperProvider>
-      </ThemeProvider>
-    </SafeAreaProvider>
+    <ErrorBoundary>
+      <SafeAreaProvider>
+        <ThemeProvider>
+          <PaperProvider>
+            <StatusBar barStyle="light-content" backgroundColor="#FF0000" />
+            <NavigationWrapper />
+          </PaperProvider>
+        </ThemeProvider>
+      </SafeAreaProvider>
+    </ErrorBoundary>
   );
 }

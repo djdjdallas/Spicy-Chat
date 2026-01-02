@@ -33,7 +33,9 @@ export const useConversation = (supabase, route) => {
           .eq("user_id", user.id);
 
         if (error) {
-          console.error("Error checking subscription:", error);
+          if (__DEV__) {
+            console.error("Error checking subscription:", error);
+          }
           setIsSubscribed(false); // Default to not subscribed on error
         } else {
           // Check if there are any active subscriptions
@@ -43,7 +45,9 @@ export const useConversation = (supabase, route) => {
           setIsSubscribed(hasActiveSubscription);
         }
       } catch (error) {
-        console.error("Error checking subscription:", error);
+        if (__DEV__) {
+          console.error("Error checking subscription:", error);
+        }
         setIsSubscribed(false); // Default to not subscribed on error
       }
     };
@@ -55,7 +59,9 @@ export const useConversation = (supabase, route) => {
     try {
       setIsLoading(true);
       setError(null);
-      console.log("Loading messages for conversation:", conversationId);
+      if (__DEV__) {
+        console.log("Loading messages for conversation:", conversationId);
+      }
 
       const { data, error } = await supabase
         .from("messages")
@@ -66,13 +72,17 @@ export const useConversation = (supabase, route) => {
       if (error) throw error;
 
       const validMessages = data || [];
-      console.log(`Loaded ${validMessages.length} messages`);
+      if (__DEV__) {
+        console.log(`Loaded ${validMessages.length} messages`);
+      }
       setMessages(validMessages);
       setContextWindow(validMessages.slice(-5));
 
       return validMessages;
     } catch (error) {
-      console.error("Error loading messages:", error);
+      if (__DEV__) {
+        console.error("Error loading messages:", error);
+      }
       setError(error.message);
       return [];
     } finally {
@@ -81,8 +91,10 @@ export const useConversation = (supabase, route) => {
   };
 
   const initializeConversation = async (forceNew = false) => {
-    console.log("Initializing conversation, forceNew:", forceNew);
-    console.log("Current isInitialized:", isInitialized);
+    if (__DEV__) {
+      console.log("Initializing conversation, forceNew:", forceNew);
+      console.log("Current isInitialized:", isInitialized);
+    }
 
     try {
       setIsLoading(true);
@@ -96,14 +108,15 @@ export const useConversation = (supabase, route) => {
       if (!user) throw new Error("No authenticated user found");
 
       const conversationId = route.params?.conversationId;
-      console.log("Conversation ID from route params:", conversationId);
+      if (__DEV__) {
+        console.log("Conversation ID from route params:", conversationId);
+      }
 
       // Handle existing conversation
       if (conversationId && !forceNew) {
-        console.log(
-          "Attempting to load existing conversation:",
-          conversationId
-        );
+        if (__DEV__) {
+          console.log("Attempting to load existing conversation:", conversationId);
+        }
         const { data: existingConversation, error: conversationError } =
           await supabase
             .from("conversations")
@@ -112,12 +125,16 @@ export const useConversation = (supabase, route) => {
             .single();
 
         if (conversationError) {
-          console.error("Error fetching conversation:", conversationError);
+          if (__DEV__) {
+            console.error("Error fetching conversation:", conversationError);
+          }
           throw conversationError;
         }
 
         if (existingConversation) {
-          console.log("Found existing conversation:", existingConversation.id);
+          if (__DEV__) {
+            console.log("Found existing conversation:", existingConversation.id);
+          }
           setConversation(existingConversation);
           const loadedMessages = await loadMessages(conversationId);
           if (loadedMessages.length > 0) {
@@ -129,13 +146,15 @@ export const useConversation = (supabase, route) => {
 
       // Only create new if explicitly forced or no existing conversation found
       if (forceNew || !conversationId) {
-        console.log("Creating new conversation");
+        if (__DEV__) {
+          console.log("Creating new conversation");
+        }
         const { data: newConversation, error: newConversationError } =
           await supabase
             .from("conversations")
             .insert({
               title: "New Chat",
-              model: "dolphin-2.9.2-qwen2-72b",
+              model: "cognitivecomputations/dolphin-2.9.2-qwen2-72b",
               user_id: user.id,
             })
             .select()
@@ -143,7 +162,9 @@ export const useConversation = (supabase, route) => {
 
         if (newConversationError) throw newConversationError;
 
-        console.log("Created new conversation:", newConversation.id);
+        if (__DEV__) {
+          console.log("Created new conversation:", newConversation.id);
+        }
         setConversation(newConversation);
         setMessages([]); // Clear messages for new conversation
         setContextWindow([]); // Clear context window for new conversation
@@ -151,7 +172,9 @@ export const useConversation = (supabase, route) => {
 
       setIsInitialized(true);
     } catch (error) {
-      console.error("Error initializing conversation:", error);
+      if (__DEV__) {
+        console.error("Error initializing conversation:", error);
+      }
       setError(error.message);
       Alert.alert("Error", "Failed to start conversation");
     } finally {
@@ -162,7 +185,9 @@ export const useConversation = (supabase, route) => {
   useEffect(() => {
     const conversationId = route.params?.conversationId;
     if (conversationId) {
-      console.log("Conversation ID changed:", conversationId);
+      if (__DEV__) {
+        console.log("Conversation ID changed:", conversationId);
+      }
       setIsInitialized(false);
       setConversation(null);
       setMessages([]);
@@ -266,7 +291,9 @@ export const useConversation = (supabase, route) => {
 
         return { success: true };
       } catch (error) {
-        console.error("Error sending message:", error);
+        if (__DEV__) {
+          console.error("Error sending message:", error);
+        }
         setError(error.message);
         Alert.alert("Error", "Failed to send message");
         return { success: false, error };
@@ -288,7 +315,9 @@ export const useConversation = (supabase, route) => {
 
       if (error) throw error;
     } catch (error) {
-      console.error("Error updating conversation timestamp:", error);
+      if (__DEV__) {
+        console.error("Error updating conversation timestamp:", error);
+      }
     }
   };
 

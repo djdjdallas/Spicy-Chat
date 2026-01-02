@@ -128,11 +128,55 @@ const buildMessageContext = (messages) => {
   }, {});
 };
 
+const buildUserProfileContext = (profile) => {
+  if (!profile) return "";
+
+  const parts = [];
+
+  if (profile.display_name) {
+    parts.push(`The user's name is ${profile.display_name}.`);
+  }
+
+  if (profile.bio) {
+    parts.push(`About them: ${profile.bio}`);
+  }
+
+  if (profile.communication_style) {
+    parts.push(`Their preferred communication style is: ${profile.communication_style}.`);
+  }
+
+  if (profile.relationship_goal) {
+    parts.push(`They are looking for: ${profile.relationship_goal}.`);
+  }
+
+  if (profile.interests && Array.isArray(profile.interests) && profile.interests.length > 0) {
+    parts.push(`Their interests include: ${profile.interests.join(", ")}.`);
+  }
+
+  if (profile.hobbies && Array.isArray(profile.hobbies) && profile.hobbies.length > 0) {
+    parts.push(`Their hobbies include: ${profile.hobbies.join(", ")}.`);
+  }
+
+  if (profile.values && Array.isArray(profile.values) && profile.values.length > 0) {
+    parts.push(`They value: ${profile.values.join(", ")}.`);
+  }
+
+  if (parts.length === 0) return "";
+
+  return `
+USER PROFILE:
+${parts.join("\n")}
+
+Use this information to personalize your responses and match their communication style and interests.
+`;
+};
+
 export const sendMessageToAPI = async (
   content,
   model,
   conversationHistory = [],
-  retryCount = 0
+  retryCount = 0,
+  userProfile = null
 ) => {
   try {
     if (!content || typeof content !== "string") {
@@ -151,6 +195,7 @@ export const sendMessageToAPI = async (
     const isTextCreationRequest = detectTextCreationRequest(content);
     const messageContext = buildMessageContext(lastMessages);
     const greeting = getRandomGreeting();
+    const profileContext = buildUserProfileContext(userProfile);
 
     // Build enhanced prompt based on request type
     let enhancedPrompt = "";
@@ -170,7 +215,7 @@ export const sendMessageToAPI = async (
     if (isTextCreationRequest) {
       enhancedPrompt = `
 I will help you create the text you requested. I'll write it in first person as if I were you.
-
+${profileContext}
 PREVIOUS CONTEXT:
 ${lastMessages
   .map((msg) => `${msg.role.toUpperCase()}: ${msg.content}`)
@@ -192,6 +237,7 @@ Do not use "Hey there" or "Hi there".
       };
     } else if (isModifyRequest && lastResponse) {
       enhancedPrompt = `
+${profileContext}
 Previous response to modify:
 """
 ${lastResponse.content}
@@ -206,6 +252,7 @@ Do not use "Hey there" or "Hi there".
 `.trim();
     } else {
       enhancedPrompt = `
+${profileContext}
 ${lastMessages
   .map((msg) => `${msg.role.toUpperCase()}: ${msg.content}`)
   .join("\n\n")}
@@ -219,31 +266,28 @@ Do not use "Hey there" or "Hi there".
 `.trim();
     }
 
-    const requestBody = {
-      prompt: enhancedPrompt,
-      model: model,
-      context: lastMessages.map((msg) => ({
+    // Build messages array for NanoGPT API
+    const messages = [
+      {
+        role: "system",
+        content: enhancedPrompt,
+      },
+      ...lastMessages.map((msg) => ({
         role: msg.role,
         content: msg.content,
-        timestamp: msg.created_at,
-        contextId: msg.id,
-        referencedContext: messageContext[msg.id],
       })),
-      metadata: {
-        isModificationRequest: isModifyRequest,
-        isTextCreationRequest,
-        originalRequest: lastUserMessage?.content,
-        lastResponse: lastResponse?.content,
-        messageChain: conversationHistory.length,
-        contextSize: lastMessages.length,
-        messageContext,
-        avoidPetNames: true,
-        preferredGreeting: greeting,
+      {
+        role: "user",
+        content: content,
       },
-      systemInstructions,
+    ];
+
+    const requestBody = {
+      model: model,
+      messages: messages,
+      stream: false,
     };
 
-    // Rest of the API call logic remains the same...
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 30000);
 
@@ -251,7 +295,7 @@ Do not use "Hey there" or "Hi there".
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        "x-api-key": API_KEY,
+        Authorization: `Bearer ${API_KEY}`,
       },
       body: JSON.stringify(requestBody),
       signal: controller.signal,
@@ -261,21 +305,28 @@ Do not use "Hey there" or "Hi there".
 
     if (!response.ok) {
       const errorText = await response.text();
-      console.error("API Error Details:", {
-        status: response.status,
-        statusText: response.statusText,
-        errorText,
-      });
+      if (__DEV__) {
+        console.error("API Error Details:", {
+          status: response.status,
+          statusText: response.statusText,
+          errorText,
+        });
+      }
       throw new Error(`API request failed with status ${response.status}`);
     }
 
-    const rawText = await response.text();
+    const jsonResponse = await response.json();
 
-    if (!isValidResponse(rawText)) {
+    // Extract message content from NanoGPT response format
+    let responseText = jsonResponse?.choices?.[0]?.message?.content;
+
+    if (!responseText || typeof responseText !== "string") {
+      if (__DEV__) {
+        console.error("Invalid API response structure:", jsonResponse);
+      }
       throw new Error("Invalid response format from API");
     }
 
-    let responseText = rawText;
     let metadata = {
       isModifyRequest,
       isTextCreationRequest,
@@ -283,27 +334,8 @@ Do not use "Hey there" or "Hi there".
       messageContext,
       avoidPetNames: true,
       preferredGreeting: greeting,
+      usage: jsonResponse?.usage,
     };
-
-    const metadataMatch = rawText.match(/<NanoGPT>(.*?)<\/NanoGPT>/);
-    if (metadataMatch) {
-      responseText = rawText.replace(/<NanoGPT>.*?<\/NanoGPT>/, "").trim();
-      try {
-        const parsedMetadata = JSON.parse(metadataMatch[1]);
-        metadata = { ...metadata, ...parsedMetadata };
-      } catch (error) {
-        console.warn("Failed to parse metadata:", error);
-      }
-    }
-
-    // Ensure the response starts with an approved greeting if it doesn't already
-    if (
-      !responseText.startsWith("Hey") &&
-      !responseText.startsWith("Hi") &&
-      !responseText.startsWith("What's up")
-    ) {
-      responseText = `${greeting}! ${responseText}`;
-    }
 
     return {
       responseText,
@@ -311,24 +343,28 @@ Do not use "Hey there" or "Hi there".
       success: true,
     };
   } catch (error) {
-    // Error handling remains the same...
-    console.error("Error in sendMessageToAPI:", {
-      error: error.message,
-      retryCount,
-    });
+    if (__DEV__) {
+      console.error("Error in sendMessageToAPI:", {
+        error: error.message,
+        retryCount,
+      });
 
-    if (error.name === "AbortError") {
-      console.log("Request timed out");
+      if (error.name === "AbortError") {
+        console.log("Request timed out");
+      }
     }
 
     if (retryCount < MAX_RETRIES) {
-      console.log(`Retrying API call (${retryCount + 1}/${MAX_RETRIES})...`);
+      if (__DEV__) {
+        console.log(`Retrying API call (${retryCount + 1}/${MAX_RETRIES})...`);
+      }
       await sleep(RETRY_DELAY * Math.pow(2, retryCount));
       return sendMessageToAPI(
         content,
         model,
         conversationHistory,
-        retryCount + 1
+        retryCount + 1,
+        userProfile
       );
     }
 

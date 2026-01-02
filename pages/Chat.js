@@ -25,6 +25,7 @@ const Chat = ({ navigation, route }) => {
   const flatListRef = useRef();
   const [listHeight, setListHeight] = useState(0);
   const [contentHeight, setContentHeight] = useState(0);
+  const [userProfile, setUserProfile] = useState(null);
 
   // Get partner info from route params
   const partnerName = route.params?.partnerName || "Assistant";
@@ -61,6 +62,31 @@ const Chat = ({ navigation, route }) => {
     init();
   }, []);
 
+  // Fetch user profile for personalization
+  useEffect(() => {
+    const fetchUserProfile = async () => {
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user) {
+          const { data: profile, error } = await supabase
+            .from("profiles")
+            .select("*")
+            .eq("id", user.id)
+            .single();
+
+          if (!error && profile) {
+            setUserProfile(profile);
+          }
+        }
+      } catch (error) {
+        if (__DEV__) {
+          console.error("Error fetching user profile:", error);
+        }
+      }
+    };
+    fetchUserProfile();
+  }, []);
+
   // Auto-scroll when new messages are added
   useEffect(() => {
     if (flatListRef.current && messages.length > 0) {
@@ -78,7 +104,9 @@ const Chat = ({ navigation, route }) => {
         contextChain: [],
       });
     } catch (error) {
-      console.error("Error initializing new chat:", error);
+      if (__DEV__) {
+        console.error("Error initializing new chat:", error);
+      }
       Alert.alert("Error", "Failed to start new chat. Please try again.");
     }
   };
@@ -125,7 +153,9 @@ const Chat = ({ navigation, route }) => {
 
       return data;
     } catch (error) {
-      console.error("Error saving message:", error);
+      if (__DEV__) {
+        console.error("Error saving message:", error);
+      }
       throw error;
     }
   };
@@ -148,7 +178,9 @@ const Chat = ({ navigation, route }) => {
       const { responseText, metadata, success } = await sendMessageToAPI(
         messageText,
         conversation.model,
-        formatMessageHistory([...messages, savedUserMessage].slice(-5))
+        formatMessageHistory([...messages, savedUserMessage].slice(-5)),
+        0,
+        userProfile
       );
 
       if (!success) {
@@ -206,7 +238,9 @@ const Chat = ({ navigation, route }) => {
         );
       }
     } catch (error) {
-      console.error("Error in sendMessage:", error);
+      if (__DEV__) {
+        console.error("Error in sendMessage:", error);
+      }
       Alert.alert("Error", "Failed to send message. Please try again.");
     } finally {
       setIsLoading(false);

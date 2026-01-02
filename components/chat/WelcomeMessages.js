@@ -8,9 +8,9 @@ export const WelcomeMessages = ({ theme, partnerName }) => {
     {
       id: "welcome-1",
       role: "assistant",
-      content: `Hey, I'm ${
+      content: `Hey there, I'm ${
         partnerName || "your conversation partner"
-      }! Ready to help you practice your conversation skills. How can I help you today?`,
+      }. I've been waiting for you... Ready to turn up the heat and explore some fun conversations? What's on your mind tonight?`,
       created_at: new Date().toISOString(),
       metadata: {
         partnerName: partnerName,

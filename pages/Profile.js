@@ -225,6 +225,12 @@ const Profile = () => {
     { label: "Interests", value: profile?.interests?.join(", ") },
     { label: "Hobbies", value: profile?.hobbies?.join(", ") },
     { label: "Values", value: profile?.values?.join(", ") },
+    {
+      label: "Preferred Platforms",
+      value: profile?.preferred_platforms
+        ?.map((p) => p.charAt(0).toUpperCase() + p.slice(1))
+        .join(", "),
+    },
   ];
 
   return (
