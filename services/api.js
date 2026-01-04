@@ -1,6 +1,12 @@
 // services/api.js
 import { Alert } from "react-native";
-import { API_KEY, API_URL } from "@env";
+import Constants from "expo-constants";
+
+// Get env vars from expo-constants extra
+const extra = Constants.expoConfig?.extra || Constants.manifest?.extra || {};
+const API_KEY = extra.apiKey;
+const API_URL = extra.apiUrl;
+
 export const FREE_MESSAGE_LIMIT = 10;
 const MAX_RETRIES = 3;
 const RETRY_DELAY = 1000;

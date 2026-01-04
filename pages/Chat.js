@@ -14,8 +14,10 @@ import { ChatHeader } from "../components/chat/Header";
 import { MessageBubble } from "../components/chat/MessageBubble";
 import { MessageInput } from "../components/chat/MessageInput";
 import { WelcomeMessages } from "../components/chat/WelcomeMessages";
+import AIConsentModal from "../components/AIConsentModal";
 import { useConversation } from "../hooks/useConversation";
 import { useConversationPartner } from "../features/ConversationPartner";
+import { useCompliance } from "../hooks/useCompliance";
 import { sendMessageToAPI, formatMessageHistory } from "../services/api";
 import { useTheme } from "../context/ThemeContext";
 
@@ -26,12 +28,20 @@ const Chat = ({ navigation, route }) => {
   const [listHeight, setListHeight] = useState(0);
   const [contentHeight, setContentHeight] = useState(0);
   const [userProfile, setUserProfile] = useState(null);
+  const [showAIConsentModal, setShowAIConsentModal] = useState(false);
+  const [pendingMessage, setPendingMessage] = useState(null);
+  const { aiConsentGiven, giveAiConsent } = useCompliance();
 
   // Get partner info from route params
   const partnerName = route.params?.partnerName || "Assistant";
   const partnerId = route.params?.partnerId;
   const partnerStyle = route.params?.partnerStyle;
   const partnerGoals = route.params?.partnerGoals;
+
+  // Get prefilled text from route params (from Home insights or Openers Vault)
+  const prefillContext = route.params?.prefillContext;
+  const prefillMessage = route.params?.prefillMessage;
+  const initialInputText = prefillContext || prefillMessage || "";
 
   // Track message context
   const [messageContext, setMessageContext] = useState({
@@ -160,11 +170,34 @@ const Chat = ({ navigation, route }) => {
     }
   };
 
+  // Handle AI consent
+  const handleAIConsent = async () => {
+    await giveAiConsent();
+    setShowAIConsentModal(false);
+
+    // Process the pending message if there is one
+    if (pendingMessage) {
+      await processMessage(pendingMessage);
+      setPendingMessage(null);
+    }
+  };
+
   const sendMessage = async (messageText) => {
     if (!messageText?.trim() || isLoading) {
       return;
     }
 
+    // Check for AI consent on first message
+    if (!aiConsentGiven) {
+      setPendingMessage(messageText);
+      setShowAIConsentModal(true);
+      return;
+    }
+
+    await processMessage(messageText);
+  };
+
+  const processMessage = async (messageText) => {
     try {
       setIsLoading(true);
 
@@ -251,6 +284,10 @@ const Chat = ({ navigation, route }) => {
     <View
       style={[styles.container, { backgroundColor: theme.colors.background }]}
     >
+      <AIConsentModal
+        visible={showAIConsentModal}
+        onConsent={handleAIConsent}
+      />
       <ChatHeader
         onNewChat={initializeNewChat}
         theme={theme}
@@ -323,7 +360,7 @@ const Chat = ({ navigation, route }) => {
         <MessageInput
           sendMessage={sendMessage}
           isLoading={isLoading || conversationLoading}
-          theme={theme}
+          initialText={initialInputText}
         />
       </KeyboardAvoidingView>
     </View>

@@ -1,14 +1,15 @@
 // navigation/index.js
 import React from "react";
-import { View, Text, TouchableOpacity, Platform, ActivityIndicator } from "react-native";
+import { View, ActivityIndicator, Platform } from "react-native";
 import { createStackNavigator } from "@react-navigation/stack";
-import { createDrawerNavigator } from "@react-navigation/drawer";
+import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { Ionicons } from "@expo/vector-icons";
 import { useTheme } from "../context/ThemeContext";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useOnboarding } from "../hooks/useOnboarding";
+import { LinearGradient } from "expo-linear-gradient";
+
 // Import screens
-import DrawerContent from "../components/DrawerContent";
 import Chat from "../pages/Chat";
 import Profile from "../pages/Profile";
 import Settings from "../pages/Settings";
@@ -21,171 +22,253 @@ import OnboardingScreen from "../Onboarding";
 import OnboardingProfile from "../pages/OnboardingProfile";
 import OnboardingPartner from "../pages/OnboardingPartner";
 import ScreenshotAnalysis from "../pages/ScreenshotAnalysis";
+import AgeVerification from "../pages/AgeVerification";
+import Home from "../pages/Home";
+import ProfileAudit from "../pages/ProfileAudit";
+import OpenersVault from "../pages/OpenersVault";
+import { useCompliance } from "../hooks/useCompliance";
 
 const Stack = createStackNavigator();
-const Drawer = createDrawerNavigator();
+const Tab = createBottomTabNavigator();
 const OnboardingStack = createStackNavigator();
+const MainStack = createStackNavigator();
 
-function CustomHeader({ navigation, route, options }) {
-  const insets = useSafeAreaInsets();
-  const { theme } = useTheme();
-  const title = options?.headerTitle || route.name;
-
+function TabBarIcon({ name, focused, color, size }) {
   return (
-    <View
-      style={{
-        paddingTop: Platform.OS === "ios" ? insets.top : 0,
-        backgroundColor: theme.colors.background,
-        borderBottomWidth: 1,
-        borderBottomColor: theme.colors.border,
-      }}
-    >
-      <View
-        style={{
-          height: 56,
-          flexDirection: "row",
-          alignItems: "center",
-          backgroundColor: theme.colors.background,
-          paddingHorizontal: 16,
-        }}
-      >
-        <TouchableOpacity
-          onPress={navigation.toggleDrawer}
-          style={{
-            width: 44,
-            height: 44,
-            justifyContent: "center",
-            alignItems: "center",
-            borderRadius: 12,
-            backgroundColor: theme.colors.backgroundTertiary,
-          }}
-        >
-          <Ionicons name="menu" size={24} color={theme.colors.textPrimary} />
-        </TouchableOpacity>
-        <Text
-          style={{
-            marginLeft: 16,
-            color: theme.colors.textPrimary,
-            fontSize: 18,
-            fontWeight: "600",
-            letterSpacing: 0,
-          }}
-        >
-          {title}
-        </Text>
-      </View>
+    <View style={{ alignItems: "center", justifyContent: "center" }}>
+      <Ionicons name={name} size={size} color={color} />
     </View>
   );
 }
 
-function DrawerNavigator() {
+function BottomTabNavigator() {
   const { theme } = useTheme();
-
-  const drawerScreenOptions = {
-    drawerStyle: {
-      backgroundColor: theme.colors.background,
-      width: 280,
-    },
-    drawerActiveBackgroundColor: theme.colors.backgroundTertiary,
-    drawerActiveTintColor: theme.colors.textPrimary,
-    drawerInactiveTintColor: theme.colors.textSecondary,
-    drawerLabelStyle: {
-      marginLeft: -16,
-      fontSize: 16,
-      fontWeight: "500",
-    },
-    header: (props) => <CustomHeader {...props} />,
-  };
+  const insets = useSafeAreaInsets();
 
   return (
-    <Drawer.Navigator
-      drawerContent={(props) => <DrawerContent {...props} />}
-      screenOptions={drawerScreenOptions}
+    <Tab.Navigator
+      screenOptions={{
+        headerShown: false,
+        tabBarStyle: {
+          backgroundColor: theme.colors.background,
+          borderTopWidth: 1,
+          borderTopColor: theme.colors.border,
+          height: 60 + (Platform.OS === "ios" ? insets.bottom : 0),
+          paddingTop: 8,
+          paddingBottom: Platform.OS === "ios" ? insets.bottom : 8,
+        },
+        tabBarActiveTintColor: theme.colors.primary,
+        tabBarInactiveTintColor: theme.colors.textMuted,
+        tabBarLabelStyle: {
+          fontSize: 11,
+          fontWeight: "500",
+          marginTop: 2,
+        },
+      }}
     >
-      <Drawer.Screen
+      <Tab.Screen
+        name="Home"
+        component={Home}
+        options={{
+          title: "Home",
+          tabBarIcon: ({ focused, color, size }) => (
+            <TabBarIcon
+              name={focused ? "home" : "home-outline"}
+              focused={focused}
+              color={color}
+              size={22}
+            />
+          ),
+        }}
+      />
+      <Tab.Screen
         name="Chat"
         component={Chat}
         options={{
-          headerShown: false,
-          title: "Poise",
-          drawerIcon: ({ color, size }) => (
-            <Ionicons name="chatbubble-outline" size={size} color={color} />
+          title: "Chat",
+          tabBarIcon: ({ focused, color, size }) => (
+            <TabBarIcon
+              name={focused ? "chatbubble" : "chatbubble-outline"}
+              focused={focused}
+              color={color}
+              size={22}
+            />
           ),
         }}
       />
-      <Drawer.Screen
-        name="Partners"
-        component={PartnerSelection}
-        options={{
-          title: "Conversation Partners",
-          drawerIcon: ({ color, size }) => (
-            <Ionicons name="people-outline" size={size} color={color} />
-          ),
-        }}
-      />
-      <Drawer.Screen
+      <Tab.Screen
         name="ScreenshotAnalysis"
         component={ScreenshotAnalysis}
         options={{
-          title: "Screenshot Analysis",
-          drawerIcon: ({ color, size }) => (
-            <Ionicons name="camera-outline" size={size} color={color} />
+          title: "Analyze",
+          tabBarIcon: ({ focused, color, size }) => (
+            <TabBarIcon
+              name={focused ? "camera" : "camera-outline"}
+              focused={focused}
+              color={color}
+              size={22}
+            />
           ),
         }}
       />
-      <Drawer.Screen
+      <Tab.Screen
+        name="More"
+        component={MoreStack}
+        options={{
+          title: "More",
+          tabBarIcon: ({ focused, color, size }) => (
+            <TabBarIcon
+              name={focused ? "menu" : "menu-outline"}
+              focused={focused}
+              color={color}
+              size={22}
+            />
+          ),
+        }}
+      />
+    </Tab.Navigator>
+  );
+}
+
+// Stack for More tab items
+function MoreStack() {
+  const { theme } = useTheme();
+
+  return (
+    <MainStack.Navigator
+      screenOptions={{
+        headerStyle: {
+          backgroundColor: theme.colors.background,
+          shadowColor: "transparent",
+          elevation: 0,
+        },
+        headerTintColor: theme.colors.textPrimary,
+        headerTitleStyle: {
+          fontWeight: "600",
+        },
+      }}
+    >
+      <MainStack.Screen
+        name="MoreMenu"
+        component={MoreMenu}
+        options={{ title: "More" }}
+      />
+      <MainStack.Screen
+        name="History"
+        component={ConversationHistory}
+        options={{ title: "History" }}
+      />
+      <MainStack.Screen
         name="Profile"
         component={Profile}
-        options={{
-          drawerIcon: ({ color, size }) => (
-            <Ionicons name="person-outline" size={size} color={color} />
-          ),
-        }}
+        options={{ title: "Profile" }}
       />
-      <Drawer.Screen
-        name="ConversationHistory"
-        component={ConversationHistory}
-        options={{
-          title: "History",
-          drawerIcon: ({ color, size }) => (
-            <Ionicons name="time-outline" size={size} color={color} />
-          ),
-        }}
+      <MainStack.Screen
+        name="ProfileAudit"
+        component={ProfileAudit}
+        options={{ title: "Profile Audit" }}
       />
-      <Drawer.Screen
+      <MainStack.Screen
+        name="OpenersVault"
+        component={OpenersVault}
+        options={{ title: "Openers Vault" }}
+      />
+      <MainStack.Screen
+        name="PartnerSelection"
+        component={PartnerSelection}
+        options={{ title: "Partners" }}
+      />
+      <MainStack.Screen
         name="Tips"
         component={Tips}
-        options={{
-          drawerIcon: ({ color, size }) => (
-            <Ionicons name="bulb-outline" size={size} color={color} />
-          ),
-        }}
+        options={{ title: "Tips" }}
       />
-      <Drawer.Screen
+      <MainStack.Screen
         name="Settings"
         component={Settings}
-        options={{
-          drawerIcon: ({ color, size }) => (
-            <Ionicons name="settings-outline" size={size} color={color} />
-          ),
-        }}
+        options={{ title: "Settings" }}
       />
-      <Drawer.Screen
+      <MainStack.Screen
         name="Subscription"
         component={Subscription}
-        options={{
-          title: "Premium",
-          drawerIcon: ({ color, size }) => (
-            <Ionicons name="diamond-outline" size={size} color={color} />
-          ),
-        }}
+        options={{ title: "Premium" }}
       />
-    </Drawer.Navigator>
+    </MainStack.Navigator>
+  );
+}
+
+// More Menu Screen
+import { TouchableOpacity, Text, ScrollView } from "react-native";
+
+function MoreMenu({ navigation }) {
+  const { theme } = useTheme();
+
+  const menuItems = [
+    { name: "History", icon: "time-outline", screen: "History" },
+    { name: "Profile", icon: "person-outline", screen: "Profile" },
+    { name: "Tips", icon: "bulb-outline", screen: "Tips" },
+    { name: "Settings", icon: "settings-outline", screen: "Settings" },
+    { name: "Premium", icon: "diamond-outline", screen: "Subscription" },
+  ];
+
+  return (
+    <ScrollView
+      style={{ flex: 1, backgroundColor: theme.colors.background }}
+      contentContainerStyle={{ padding: 16 }}
+    >
+      {menuItems.map((item, index) => (
+        <TouchableOpacity
+          key={item.name}
+          onPress={() => navigation.navigate(item.screen)}
+          style={{
+            flexDirection: "row",
+            alignItems: "center",
+            padding: 16,
+            backgroundColor: theme.colors.surfaceSecondary,
+            borderRadius: 12,
+            marginBottom: 12,
+            borderWidth: 1,
+            borderColor: theme.colors.border,
+          }}
+          activeOpacity={0.7}
+        >
+          <View
+            style={{
+              width: 40,
+              height: 40,
+              borderRadius: 10,
+              backgroundColor: theme.colors.shimmerLight,
+              justifyContent: "center",
+              alignItems: "center",
+            }}
+          >
+            <Ionicons name={item.icon} size={20} color={theme.colors.primary} />
+          </View>
+          <Text
+            style={{
+              marginLeft: 12,
+              fontSize: 16,
+              fontWeight: "500",
+              color: theme.colors.textPrimary,
+              flex: 1,
+            }}
+          >
+            {item.name}
+          </Text>
+          <Ionicons
+            name="chevron-forward"
+            size={20}
+            color={theme.colors.textTertiary}
+          />
+        </TouchableOpacity>
+      ))}
+    </ScrollView>
   );
 }
 
 function OnboardingNavigator() {
   const { completeCarousel, completeProfile, completePartner } = useOnboarding();
+  const { confirmAge } = useCompliance();
 
   return (
     <OnboardingStack.Navigator
@@ -199,6 +282,17 @@ function OnboardingNavigator() {
             {...props}
             onComplete={() => {
               completeCarousel();
+              props.navigation.navigate("AgeVerificationGate");
+            }}
+          />
+        )}
+      </OnboardingStack.Screen>
+      <OnboardingStack.Screen name="AgeVerificationGate">
+        {(props) => (
+          <AgeVerification
+            {...props}
+            onVerified={async () => {
+              await confirmAge();
               props.navigation.navigate("OnboardingProfileSetup");
             }}
           />
@@ -263,7 +357,7 @@ export function RootNavigator({ userSession }) {
       ) : !hasCompletedOnboarding ? (
         <Stack.Screen name="Onboarding" component={OnboardingNavigator} />
       ) : (
-        <Stack.Screen name="DrawerNavigator" component={DrawerNavigator} />
+        <Stack.Screen name="MainTabs" component={BottomTabNavigator} />
       )}
     </Stack.Navigator>
   );

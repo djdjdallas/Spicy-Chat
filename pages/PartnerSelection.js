@@ -11,6 +11,7 @@ import {
   ScrollView,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import { LinearGradient } from "expo-linear-gradient";
 import { useConversationPartner } from "../features/ConversationPartner";
 import { supabase } from "../lib/supabase";
 import { useTheme } from "../context/ThemeContext";
@@ -130,8 +131,9 @@ export const PartnerSelection = ({ navigation }) => {
       style={[
         styles.partnerCard,
         {
-          backgroundColor: theme.colors.surface,
-          ...theme.shadows.sm,
+          backgroundColor: theme.colors.surfaceSecondary,
+          borderWidth: 1,
+          borderColor: theme.colors.border,
           opacity: hasSubscription ? 1 : 0.6,
         },
       ]}
@@ -139,14 +141,14 @@ export const PartnerSelection = ({ navigation }) => {
       activeOpacity={0.7}
     >
       <View style={styles.partnerHeader}>
-        <View
-          style={[
-            styles.avatarContainer,
-            { backgroundColor: theme.colors.primaryMuted },
-          ]}
+        <LinearGradient
+          colors={theme.gradients.primary}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={styles.avatarContainer}
         >
-          <Ionicons name="person" size={28} color={theme.colors.primary} />
-        </View>
+          <Ionicons name="person" size={28} color={theme.colors.pureWhite} />
+        </LinearGradient>
         <View style={styles.partnerTitleSection}>
           <Text
             style={[
@@ -195,13 +197,13 @@ export const PartnerSelection = ({ navigation }) => {
           <View
             style={[
               styles.detailIcon,
-              { backgroundColor: theme.colors.backgroundTertiary },
+              { backgroundColor: theme.colors.shimmerLight },
             ]}
           >
             <Ionicons
               name="chatbubble-ellipses-outline"
               size={16}
-              color={theme.colors.textSecondary}
+              color={theme.colors.primary}
             />
           </View>
           <Text
@@ -230,13 +232,13 @@ export const PartnerSelection = ({ navigation }) => {
           <View
             style={[
               styles.detailIcon,
-              { backgroundColor: theme.colors.backgroundTertiary },
+              { backgroundColor: theme.colors.shimmerLight },
             ]}
           >
             <Ionicons
               name="flag-outline"
               size={16}
-              color={theme.colors.textSecondary}
+              color={theme.colors.primary}
             />
           </View>
           <Text
@@ -309,23 +311,27 @@ export const PartnerSelection = ({ navigation }) => {
           <View
             style={[
               styles.subscriptionBanner,
-              { backgroundColor: theme.colors.black },
+              {
+                backgroundColor: theme.colors.surfaceSecondary,
+                borderWidth: 1,
+                borderColor: theme.colors.border,
+              },
             ]}
           >
             <View style={styles.bannerContent}>
-              <View
-                style={[
-                  styles.bannerIcon,
-                  { backgroundColor: theme.colors.primaryMuted },
-                ]}
+              <LinearGradient
+                colors={theme.gradients.primary}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+                style={styles.bannerIcon}
               >
-                <Ionicons name="lock-closed" size={20} color={theme.colors.primary} />
-              </View>
+                <Ionicons name="lock-closed" size={20} color={theme.colors.pureWhite} />
+              </LinearGradient>
               <View style={styles.bannerText}>
                 <Text
                   style={[
                     styles.bannerTitle,
-                    { color: theme.colors.pureWhite },
+                    { color: theme.colors.textPrimary },
                     theme.typography.h4,
                   ]}
                 >
@@ -334,7 +340,7 @@ export const PartnerSelection = ({ navigation }) => {
                 <Text
                   style={[
                     styles.bannerDescription,
-                    { color: theme.colors.silver },
+                    { color: theme.colors.textSecondary },
                     theme.typography.bodySmall,
                   ]}
                 >
@@ -343,22 +349,26 @@ export const PartnerSelection = ({ navigation }) => {
               </View>
             </View>
             <TouchableOpacity
-              style={[
-                styles.upgradeButton,
-                { backgroundColor: theme.colors.primary },
-              ]}
               onPress={() => navigation.navigate("Subscription")}
               activeOpacity={0.85}
+              style={styles.upgradeButtonWrapper}
             >
-              <Text
-                style={[
-                  styles.upgradeButtonText,
-                  { color: theme.colors.pureWhite },
-                  theme.typography.button,
-                ]}
+              <LinearGradient
+                colors={theme.gradients.primary}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+                style={[styles.upgradeButton, theme.shadows.glow.sm]}
               >
-                Upgrade
-              </Text>
+                <Text
+                  style={[
+                    styles.upgradeButtonText,
+                    { color: theme.colors.pureWhite },
+                    theme.typography.button,
+                  ]}
+                >
+                  Upgrade
+                </Text>
+              </LinearGradient>
             </TouchableOpacity>
           </View>
         )}
@@ -385,6 +395,7 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     padding: 16,
+    paddingTop: 60,
     paddingBottom: 32,
   },
   heading: {
@@ -420,9 +431,13 @@ const styles = StyleSheet.create({
   bannerDescription: {
     // Typography applied via theme
   },
+  upgradeButtonWrapper: {
+    borderRadius: 16,
+    overflow: "hidden",
+  },
   upgradeButton: {
     paddingVertical: 14,
-    borderRadius: 12,
+    borderRadius: 16,
     alignItems: "center",
   },
   upgradeButtonText: {

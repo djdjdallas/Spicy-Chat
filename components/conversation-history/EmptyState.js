@@ -2,6 +2,7 @@
 import React from "react";
 import { View, Text, StyleSheet } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import { LinearGradient } from "expo-linear-gradient";
 import { useTheme } from "../../context/ThemeContext";
 
 export const EmptyState = () => {
@@ -9,9 +10,14 @@ export const EmptyState = () => {
 
   return (
     <View style={styles.emptyState}>
-      <View style={[styles.iconContainer, { backgroundColor: theme.colors.surfaceSecondary }]}>
-        <Ionicons name="chatbubbles-outline" size={48} color={theme.colors.textTertiary} />
-      </View>
+      <LinearGradient
+        colors={theme.gradients.primary}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+        style={[styles.iconContainer, theme.shadows.glow.sm]}
+      >
+        <Ionicons name="chatbubbles-outline" size={48} color={theme.colors.pureWhite} />
+      </LinearGradient>
       <Text style={[styles.emptyStateTitle, { color: theme.colors.textPrimary }, theme.typography.h3]}>
         No conversations yet
       </Text>

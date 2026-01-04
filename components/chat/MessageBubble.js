@@ -8,6 +8,7 @@ import {
   Clipboard,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import { LinearGradient } from "expo-linear-gradient";
 import { useTheme } from "../../context/ThemeContext";
 
 const ContextIndicator = ({ contextChain, theme }) => {
@@ -20,7 +21,7 @@ const ContextIndicator = ({ contextChain, theme }) => {
           key={id}
           style={[
             styles.contextDot,
-            { color: theme.colors.primaryMuted },
+            { color: theme.colors.shimmer },
             index === contextChain.length - 1 && {
               color: theme.colors.primary,
             },
@@ -73,6 +74,128 @@ export const MessageBubble = memo(
       };
     }, [message.content]);
 
+    // User bubble with gradient
+    const UserBubbleContent = () => (
+      <LinearGradient
+        colors={[
+          theme.colors.userBubbleGradientStart,
+          theme.colors.userBubbleGradientEnd,
+        ]}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+        style={[
+          styles.messageBubble,
+          styles.userBubble,
+          isPartOfContext && {
+            borderWidth: 2,
+            borderColor: theme.colors.primaryLight,
+          },
+        ]}
+      >
+        <Text
+          style={[
+            styles.messageText,
+            { color: theme.colors.pureWhite },
+            theme.typography.body,
+          ]}
+        >
+          {message.content}
+        </Text>
+
+        <View style={styles.messageFooter}>
+          <View style={styles.footerLeft}>
+            <Text
+              style={[
+                styles.timestamp,
+                { color: "rgba(255, 255, 255, 0.7)" },
+                theme.typography.caption,
+              ]}
+            >
+              {formattedTime}
+            </Text>
+            <ContextIndicator contextChain={contextChain} theme={theme} />
+          </View>
+
+          <TouchableOpacity
+            onPress={handleCopy}
+            style={[
+              styles.copyButton,
+              { backgroundColor: "rgba(255, 255, 255, 0.15)" },
+            ]}
+            hitSlop={{ top: 10, right: 10, bottom: 10, left: 10 }}
+            activeOpacity={0.7}
+          >
+            <Ionicons
+              name="copy-outline"
+              size={14}
+              color="rgba(255, 255, 255, 0.7)"
+            />
+          </TouchableOpacity>
+        </View>
+      </LinearGradient>
+    );
+
+    // Assistant bubble with solid background
+    const AssistantBubbleContent = () => (
+      <View
+        style={[
+          styles.messageBubble,
+          styles.assistantBubble,
+          {
+            backgroundColor: theme.colors.assistantBubble,
+            borderWidth: 1,
+            borderColor: theme.colors.border,
+            ...theme.shadows.sm,
+          },
+          isPartOfContext && {
+            borderWidth: 2,
+            borderColor: theme.colors.primary,
+          },
+        ]}
+      >
+        <Text
+          style={[
+            styles.messageText,
+            { color: theme.colors.textPrimary },
+            theme.typography.body,
+          ]}
+        >
+          {message.content}
+        </Text>
+
+        <View style={styles.messageFooter}>
+          <View style={styles.footerLeft}>
+            <Text
+              style={[
+                styles.timestamp,
+                { color: theme.colors.textTertiary },
+                theme.typography.caption,
+              ]}
+            >
+              {formattedTime}
+            </Text>
+            <ContextIndicator contextChain={contextChain} theme={theme} />
+          </View>
+
+          <TouchableOpacity
+            onPress={handleCopy}
+            style={[
+              styles.copyButton,
+              { backgroundColor: theme.colors.backgroundTertiary },
+            ]}
+            hitSlop={{ top: 10, right: 10, bottom: 10, left: 10 }}
+            activeOpacity={0.7}
+          >
+            <Ionicons
+              name="copy-outline"
+              size={14}
+              color={theme.colors.textSecondary}
+            />
+          </TouchableOpacity>
+        </View>
+      </View>
+    );
+
     return (
       <View
         style={[
@@ -85,7 +208,7 @@ export const MessageBubble = memo(
         <Text
           style={[
             styles.senderName,
-            { color: theme.colors.textSecondary },
+            { color: theme.colors.textMuted },
             theme.typography.caption,
             isUser ? styles.userLabel : styles.assistantLabel,
           ]}
@@ -93,75 +216,7 @@ export const MessageBubble = memo(
           {senderName}
         </Text>
 
-        <View
-          style={[
-            styles.messageBubble,
-            isUser ? styles.userBubble : styles.assistantBubble,
-            {
-              backgroundColor: isUser
-                ? theme.colors.black
-                : theme.colors.surface,
-              ...theme.shadows.sm,
-            },
-            isPartOfContext && {
-              borderWidth: 2,
-              borderColor: theme.colors.primary,
-            },
-          ]}
-        >
-          <Text
-            style={[
-              styles.messageText,
-              {
-                color: isUser
-                  ? theme.colors.pureWhite
-                  : theme.colors.textPrimary,
-              },
-              theme.typography.body,
-            ]}
-          >
-            {message.content}
-          </Text>
-
-          <View style={styles.messageFooter}>
-            <View style={styles.footerLeft}>
-              <Text
-                style={[
-                  styles.timestamp,
-                  {
-                    color: isUser
-                      ? theme.colors.silver
-                      : theme.colors.textTertiary,
-                  },
-                  theme.typography.caption,
-                ]}
-              >
-                {formattedTime}
-              </Text>
-              <ContextIndicator contextChain={contextChain} theme={theme} />
-            </View>
-
-            <TouchableOpacity
-              onPress={handleCopy}
-              style={[
-                styles.copyButton,
-                { backgroundColor: isUser ? theme.colors.charcoal : theme.colors.backgroundTertiary },
-              ]}
-              hitSlop={{ top: 10, right: 10, bottom: 10, left: 10 }}
-              activeOpacity={0.7}
-            >
-              <Ionicons
-                name="copy-outline"
-                size={14}
-                color={
-                  isUser
-                    ? theme.colors.silver
-                    : theme.colors.textSecondary
-                }
-              />
-            </TouchableOpacity>
-          </View>
-        </View>
+        {isUser ? <UserBubbleContent /> : <AssistantBubbleContent />}
       </View>
     );
   },
@@ -172,7 +227,7 @@ MessageBubble.displayName = "MessageBubble";
 
 const styles = StyleSheet.create({
   messageContainer: {
-    marginVertical: 6,
+    marginVertical: 8,
     paddingHorizontal: 16,
   },
   userMessageContainer: {
@@ -182,7 +237,7 @@ const styles = StyleSheet.create({
     alignItems: "flex-start",
   },
   senderName: {
-    marginBottom: 4,
+    marginBottom: 6,
     marginHorizontal: 4,
   },
   userLabel: {
@@ -194,18 +249,25 @@ const styles = StyleSheet.create({
   messageBubble: {
     maxWidth: "85%",
     minWidth: 80,
-    padding: 14,
-    borderRadius: 16,
+    padding: 16,
   },
+  // Asymmetric border radius for user messages
   userBubble: {
-    borderBottomRightRadius: 4,
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    borderBottomLeftRadius: 24,
+    borderBottomRightRadius: 6,
   },
+  // Asymmetric border radius for assistant messages
   assistantBubble: {
-    borderBottomLeftRadius: 4,
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    borderBottomLeftRadius: 6,
+    borderBottomRightRadius: 24,
   },
   messageText: {
-    lineHeight: 22,
-    marginBottom: 8,
+    lineHeight: 23,
+    marginBottom: 10,
   },
   messageFooter: {
     flexDirection: "row",

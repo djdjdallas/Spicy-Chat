@@ -17,8 +17,15 @@ export const ConversationItem = ({
     <TouchableOpacity
       style={[
         styles.conversationItem,
-        { backgroundColor: theme.colors.surface },
-        isSelected && { backgroundColor: theme.colors.primaryMuted },
+        {
+          backgroundColor: theme.colors.surfaceSecondary,
+          borderWidth: 1,
+          borderColor: theme.colors.border,
+        },
+        isSelected && {
+          backgroundColor: theme.colors.primaryMuted,
+          borderColor: theme.colors.primary,
+        },
       ]}
       onPress={onPress}
       activeOpacity={0.7}
@@ -67,7 +74,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "space-between",
     padding: 16,
-    borderRadius: 12,
+    borderRadius: 16,
     marginHorizontal: 16,
     marginBottom: 12,
   },

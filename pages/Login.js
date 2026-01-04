@@ -11,10 +11,13 @@ import {
   ActivityIndicator,
   Alert,
   SafeAreaView,
+  Linking,
 } from "react-native";
+import { LinearGradient } from "expo-linear-gradient";
+import { Ionicons } from "@expo/vector-icons";
 import { supabase } from "../lib/supabase";
 import { useTheme } from "../context/ThemeContext";
-import { APP_NAME, APP_TAGLINE } from "../config/app";
+import { APP_NAME, APP_TAGLINE, TERMS_URL, PRIVACY_URL } from "../config/app";
 
 const Login = () => {
   const { theme } = useTheme();
@@ -22,6 +25,9 @@ const Login = () => {
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [isSignUp, setIsSignUp] = useState(false);
+  const [emailFocused, setEmailFocused] = useState(false);
+  const [passwordFocused, setPasswordFocused] = useState(false);
+  const [termsAccepted, setTermsAccepted] = useState(false);
 
   const handleAuth = async () => {
     if (!email || !password) {
@@ -29,15 +35,35 @@ const Login = () => {
       return;
     }
 
+    // Require terms acceptance for sign up
+    if (isSignUp && !termsAccepted) {
+      Alert.alert(
+        "Terms Required",
+        "Please agree to the Terms of Service and Privacy Policy to create an account."
+      );
+      return;
+    }
+
     setLoading(true);
 
     try {
       if (isSignUp) {
-        const { error } = await supabase.auth.signUp({
+        const { error, data } = await supabase.auth.signUp({
           email,
           password,
         });
         if (error) throw error;
+
+        // Store terms acceptance timestamp in profile
+        if (data?.user) {
+          const timestamp = new Date().toISOString();
+          await supabase.from("profiles").upsert({
+            id: data.user.id,
+            terms_accepted_at: timestamp,
+            updated_at: timestamp,
+          });
+        }
+
         Alert.alert(
           "Success",
           "Check your email for a confirmation link to complete your registration."
@@ -67,16 +93,16 @@ const Login = () => {
         <View style={styles.content}>
           {/* Logo/Brand Section */}
           <View style={styles.brandSection}>
-            <View
-              style={[
-                styles.logoContainer,
-                { backgroundColor: theme.colors.black },
-              ]}
+            <LinearGradient
+              colors={theme.gradients.primary}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              style={[styles.logoContainer, theme.shadows.glow.md]}
             >
               <Text style={[styles.logoText, { color: theme.colors.pureWhite }]}>
                 P
               </Text>
-            </View>
+            </LinearGradient>
             <Text
               style={[
                 styles.title,
@@ -103,8 +129,8 @@ const Login = () => {
               <Text
                 style={[
                   styles.inputLabel,
-                  { color: theme.colors.textSecondary },
-                  theme.typography.caption,
+                  { color: theme.colors.textMuted },
+                  theme.typography.overline,
                 ]}
               >
                 EMAIL
@@ -115,15 +141,22 @@ const Login = () => {
                   {
                     backgroundColor: theme.colors.inputBackground,
                     color: theme.colors.textPrimary,
+                    borderWidth: 1,
+                    borderColor: emailFocused
+                      ? theme.colors.inputFocusBorder
+                      : theme.colors.inputBorder,
                   },
+                  emailFocused && theme.shadows.glow.sm,
                 ]}
                 placeholder="Enter your email"
-                placeholderTextColor={theme.colors.textTertiary}
+                placeholderTextColor={theme.colors.textMuted}
                 value={email}
                 onChangeText={setEmail}
                 keyboardType="email-address"
                 autoCapitalize="none"
                 autoComplete="email"
+                onFocus={() => setEmailFocused(true)}
+                onBlur={() => setEmailFocused(false)}
               />
             </View>
 
@@ -131,8 +164,8 @@ const Login = () => {
               <Text
                 style={[
                   styles.inputLabel,
-                  { color: theme.colors.textSecondary },
-                  theme.typography.caption,
+                  { color: theme.colors.textMuted },
+                  theme.typography.overline,
                 ]}
               >
                 PASSWORD
@@ -143,40 +176,104 @@ const Login = () => {
                   {
                     backgroundColor: theme.colors.inputBackground,
                     color: theme.colors.textPrimary,
+                    borderWidth: 1,
+                    borderColor: passwordFocused
+                      ? theme.colors.inputFocusBorder
+                      : theme.colors.inputBorder,
                   },
+                  passwordFocused && theme.shadows.glow.sm,
                 ]}
                 placeholder="Enter your password"
-                placeholderTextColor={theme.colors.textTertiary}
+                placeholderTextColor={theme.colors.textMuted}
                 value={password}
                 onChangeText={setPassword}
                 secureTextEntry
                 autoComplete="password"
+                onFocus={() => setPasswordFocused(true)}
+                onBlur={() => setPasswordFocused(false)}
               />
             </View>
 
             <TouchableOpacity
-              style={[
-                styles.primaryButton,
-                { backgroundColor: theme.colors.primary },
-              ]}
               onPress={handleAuth}
               disabled={loading}
               activeOpacity={0.85}
+              style={styles.buttonWrapper}
             >
-              {loading ? (
-                <ActivityIndicator color={theme.colors.pureWhite} />
-              ) : (
-                <Text
+              <LinearGradient
+                colors={theme.gradients.primary}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+                style={[styles.primaryButton, theme.shadows.glow.sm]}
+              >
+                {loading ? (
+                  <ActivityIndicator color={theme.colors.pureWhite} />
+                ) : (
+                  <Text
+                    style={[
+                      styles.primaryButtonText,
+                      { color: theme.colors.pureWhite },
+                      theme.typography.button,
+                    ]}
+                  >
+                    {isSignUp ? "Create Account" : "Sign In"}
+                  </Text>
+                )}
+              </LinearGradient>
+            </TouchableOpacity>
+
+            {/* Terms Checkbox - Only show for sign up */}
+            {isSignUp && (
+              <TouchableOpacity
+                style={styles.termsRow}
+                onPress={() => setTermsAccepted(!termsAccepted)}
+                activeOpacity={0.7}
+              >
+                <View
                   style={[
-                    styles.primaryButtonText,
-                    { color: theme.colors.pureWhite },
-                    theme.typography.button,
+                    styles.checkbox,
+                    {
+                      borderColor: termsAccepted
+                        ? theme.colors.primary
+                        : theme.colors.border,
+                      backgroundColor: termsAccepted
+                        ? theme.colors.primary
+                        : "transparent",
+                    },
                   ]}
                 >
-                  {isSignUp ? "Create Account" : "Sign In"}
+                  {termsAccepted && (
+                    <Ionicons
+                      name="checkmark"
+                      size={14}
+                      color={theme.colors.pureWhite}
+                    />
+                  )}
+                </View>
+                <Text
+                  style={[
+                    styles.termsText,
+                    { color: theme.colors.textSecondary },
+                    theme.typography.bodySmall,
+                  ]}
+                >
+                  I agree to the{" "}
+                  <Text
+                    style={[styles.termsLink, { color: theme.colors.primary }]}
+                    onPress={() => Linking.openURL(TERMS_URL)}
+                  >
+                    Terms of Service
+                  </Text>
+                  {" "}and{" "}
+                  <Text
+                    style={[styles.termsLink, { color: theme.colors.primary }]}
+                    onPress={() => Linking.openURL(PRIVACY_URL)}
+                  >
+                    Privacy Policy
+                  </Text>
                 </Text>
-              )}
-            </TouchableOpacity>
+              </TouchableOpacity>
+            )}
 
             <TouchableOpacity
               style={styles.switchButton}
@@ -207,11 +304,24 @@ const Login = () => {
             <Text
               style={[
                 styles.footerText,
-                { color: theme.colors.textTertiary },
+                { color: theme.colors.textMuted },
                 theme.typography.caption,
               ]}
             >
-              By continuing, you agree to our Terms of Service and Privacy Policy
+              By continuing, you agree to our{" "}
+              <Text
+                style={[styles.footerLink, { color: theme.colors.primary }]}
+                onPress={() => Linking.openURL(TERMS_URL)}
+              >
+                Terms of Service
+              </Text>
+              {" "}and{" "}
+              <Text
+                style={[styles.footerLink, { color: theme.colors.primary }]}
+                onPress={() => Linking.openURL(PRIVACY_URL)}
+              >
+                Privacy Policy
+              </Text>
             </Text>
           </View>
         </View>
@@ -265,19 +375,22 @@ const styles = StyleSheet.create({
   inputLabel: {
     marginBottom: 8,
     marginLeft: 4,
-    letterSpacing: 1,
   },
   input: {
     paddingVertical: 16,
     paddingHorizontal: 16,
     borderRadius: 12,
-    fontSize: 16,
+    fontSize: 15,
+  },
+  buttonWrapper: {
+    marginTop: 8,
+    borderRadius: 16,
+    overflow: "hidden",
   },
   primaryButton: {
     paddingVertical: 16,
-    borderRadius: 12,
+    borderRadius: 16,
     alignItems: "center",
-    marginTop: 8,
   },
   primaryButtonText: {
     // Typography applied via theme
@@ -292,6 +405,29 @@ const styles = StyleSheet.create({
   switchTextBold: {
     fontWeight: "600",
   },
+  termsRow: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    marginTop: 20,
+    paddingHorizontal: 4,
+  },
+  checkbox: {
+    width: 22,
+    height: 22,
+    borderRadius: 6,
+    borderWidth: 2,
+    justifyContent: "center",
+    alignItems: "center",
+    marginRight: 10,
+    marginTop: 2,
+  },
+  termsText: {
+    flex: 1,
+    lineHeight: 20,
+  },
+  termsLink: {
+    fontWeight: "600",
+  },
   footer: {
     alignItems: "center",
     paddingHorizontal: 16,
@@ -299,6 +435,9 @@ const styles = StyleSheet.create({
   footerText: {
     textAlign: "center",
     lineHeight: 18,
+  },
+  footerLink: {
+    fontWeight: "500",
   },
 });
 

@@ -89,10 +89,10 @@ const Settings = () => {
         <View
           style={[
             styles.iconContainer,
-            { backgroundColor: theme.colors.backgroundTertiary },
+            { backgroundColor: theme.colors.shimmerLight },
           ]}
         >
-          <Ionicons name={icon} size={20} color={theme.colors.textPrimary} />
+          <Ionicons name={icon} size={20} color={theme.colors.primary} />
         </View>
         <View style={styles.settingInfo}>
           <Text
@@ -108,7 +108,7 @@ const Settings = () => {
             <Text
               style={[
                 styles.settingDescription,
-                { color: theme.colors.textSecondary },
+                { color: theme.colors.textMuted },
                 theme.typography.caption,
               ]}
             >
@@ -143,10 +143,10 @@ const Settings = () => {
         <View
           style={[
             styles.iconContainer,
-            { backgroundColor: theme.colors.backgroundTertiary },
+            { backgroundColor: theme.colors.shimmerLight },
           ]}
         >
-          <Ionicons name={icon} size={20} color={theme.colors.textPrimary} />
+          <Ionicons name={icon} size={20} color={theme.colors.primary} />
         </View>
         <View style={styles.settingInfo}>
           <Text
@@ -162,7 +162,7 @@ const Settings = () => {
             <Text
               style={[
                 styles.settingDescription,
-                { color: theme.colors.textSecondary },
+                { color: theme.colors.textMuted },
                 theme.typography.caption,
               ]}
             >
@@ -174,7 +174,7 @@ const Settings = () => {
       <Ionicons
         name="chevron-forward"
         size={20}
-        color={theme.colors.textTertiary}
+        color={theme.colors.textMuted}
       />
     </TouchableOpacity>
   );
@@ -199,7 +199,7 @@ const Settings = () => {
         <Text
           style={[
             styles.sectionTitle,
-            { color: theme.colors.textSecondary },
+            { color: theme.colors.textMuted },
             theme.typography.overline,
           ]}
         >
@@ -208,7 +208,11 @@ const Settings = () => {
         <View
           style={[
             styles.card,
-            { backgroundColor: theme.colors.surface, ...theme.shadows.sm },
+            {
+              backgroundColor: theme.colors.surfaceSecondary,
+              borderWidth: 1,
+              borderColor: theme.colors.border,
+            },
           ]}
         >
           <SettingItem
@@ -241,7 +245,7 @@ const Settings = () => {
         <Text
           style={[
             styles.sectionTitle,
-            { color: theme.colors.textSecondary },
+            { color: theme.colors.textMuted },
             theme.typography.overline,
           ]}
         >
@@ -250,7 +254,11 @@ const Settings = () => {
         <View
           style={[
             styles.card,
-            { backgroundColor: theme.colors.surface, ...theme.shadows.sm },
+            {
+              backgroundColor: theme.colors.surfaceSecondary,
+              borderWidth: 1,
+              borderColor: theme.colors.border,
+            },
           ]}
         >
           <LinkItem
@@ -274,7 +282,7 @@ const Settings = () => {
         <Text
           style={[
             styles.sectionTitle,
-            { color: theme.colors.textSecondary },
+            { color: theme.colors.textMuted },
             theme.typography.overline,
           ]}
         >
@@ -283,7 +291,11 @@ const Settings = () => {
         <View
           style={[
             styles.card,
-            { backgroundColor: theme.colors.surface, ...theme.shadows.sm },
+            {
+              backgroundColor: theme.colors.surfaceSecondary,
+              borderWidth: 1,
+              borderColor: theme.colors.border,
+            },
           ]}
         >
           <LinkItem
@@ -314,7 +326,7 @@ const Settings = () => {
         <Text
           style={[
             styles.version,
-            { color: theme.colors.textTertiary },
+            { color: theme.colors.textMuted },
             theme.typography.caption,
           ]}
         >
@@ -342,7 +354,6 @@ const styles = StyleSheet.create({
   sectionTitle: {
     marginBottom: 12,
     marginLeft: 4,
-    letterSpacing: 1,
   },
   card: {
     borderRadius: 16,

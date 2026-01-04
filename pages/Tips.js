@@ -98,15 +98,16 @@ const Tips = () => {
             style={[
               styles.tipCard,
               {
-                backgroundColor: theme.colors.surface,
-                ...theme.shadows.sm,
+                backgroundColor: theme.colors.surfaceSecondary,
+                borderWidth: 1,
+                borderColor: theme.colors.border,
               },
             ]}
           >
             <View
               style={[
                 styles.iconContainer,
-                { backgroundColor: theme.colors.primaryMuted },
+                { backgroundColor: theme.colors.shimmerLight },
               ]}
             >
               <Ionicons
@@ -141,7 +142,11 @@ const Tips = () => {
       <View
         style={[
           styles.quoteCard,
-          { backgroundColor: theme.colors.backgroundTertiary },
+          {
+            backgroundColor: theme.colors.surfaceSecondary,
+            borderWidth: 1,
+            borderColor: theme.colors.border,
+          },
         ]}
       >
         <Text

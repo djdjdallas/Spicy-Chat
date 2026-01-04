@@ -4,6 +4,7 @@
 import React from "react";
 import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import { LinearGradient } from "expo-linear-gradient";
 import { useTheme } from "../context/ThemeContext";
 
 /**
@@ -86,20 +87,27 @@ export const MessageLimitBanner = ({
 
         {(isWarning || isBlocked) && (
           <TouchableOpacity
-            style={[styles.upgradeButton, { backgroundColor: theme.colors.primary }]}
             onPress={onUpgrade}
-            activeOpacity={0.8}
+            activeOpacity={0.85}
+            style={styles.upgradeButtonWrapper}
           >
-            <Ionicons name="diamond" size={14} color={theme.colors.pureWhite} />
-            <Text
-              style={[
-                styles.upgradeText,
-                { color: theme.colors.pureWhite },
-                theme.typography.buttonSmall,
-              ]}
+            <LinearGradient
+              colors={theme.gradients.primary}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              style={[styles.upgradeButton, theme.shadows.glow.sm]}
             >
-              Upgrade
-            </Text>
+              <Ionicons name="diamond" size={14} color={theme.colors.pureWhite} />
+              <Text
+                style={[
+                  styles.upgradeText,
+                  { color: theme.colors.pureWhite },
+                  theme.typography.buttonSmall,
+                ]}
+              >
+                Upgrade
+              </Text>
+            </LinearGradient>
           </TouchableOpacity>
         )}
       </View>
@@ -192,6 +200,10 @@ const styles = StyleSheet.create({
   text: {
     marginLeft: 8,
     flex: 1,
+  },
+  upgradeButtonWrapper: {
+    borderRadius: 16,
+    overflow: "hidden",
   },
   upgradeButton: {
     flexDirection: "row",

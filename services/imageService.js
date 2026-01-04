@@ -141,10 +141,41 @@ export const compressImage = async (uri) => {
   }
 };
 
+/**
+ * Analyze a user's dating profile screenshot using the Supabase Edge Function
+ * @param {string} base64Image - Base64 encoded image of the profile
+ * @param {string} bioText - Optional bio text input by user
+ * @param {string} platform - The dating platform the profile is from
+ * @returns {Promise<object>} Analysis results with score, strengths, improvements
+ */
+export const analyzeProfile = async (base64Image, bioText, platform) => {
+  try {
+    const { data, error } = await supabase.functions.invoke("analyze-profile", {
+      body: {
+        base64Image,
+        bioText,
+        platform,
+      },
+    });
+
+    if (error) {
+      throw error;
+    }
+
+    return data;
+  } catch (error) {
+    if (__DEV__) {
+      console.error("Error analyzing profile:", error);
+    }
+    throw new Error(error.message || "Failed to analyze profile");
+  }
+};
+
 export default {
   pickScreenshot,
   readSharedImage,
   analyzeScreenshot,
+  analyzeProfile,
   requestMediaLibraryPermission,
   compressImage,
 };

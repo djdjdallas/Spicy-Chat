@@ -12,6 +12,7 @@ import {
   Modal,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import { LinearGradient } from "expo-linear-gradient";
 import { useTheme } from "../context/ThemeContext";
 import { supabase } from "../lib/supabase";
 
@@ -207,6 +208,7 @@ const OnboardingProfile = ({ onComplete }) => {
           .map((item) => item.trim())
           .filter(Boolean),
         is_profile_complete: true,
+        age_verified: true, // User passed age verification gate
         updated_at: new Date().toISOString(),
       };
 
@@ -240,14 +242,14 @@ const OnboardingProfile = ({ onComplete }) => {
         showsVerticalScrollIndicator={false}
       >
         <View style={styles.header}>
-          <View
-            style={[
-              styles.iconContainer,
-              { backgroundColor: theme.colors.primaryMuted },
-            ]}
+          <LinearGradient
+            colors={theme.gradients.primary}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={[styles.iconContainer, theme.shadows.glow.sm]}
           >
-            <Ionicons name="person-outline" size={32} color={theme.colors.primary} />
-          </View>
+            <Ionicons name="person-outline" size={32} color={theme.colors.pureWhite} />
+          </LinearGradient>
           <Text
             style={[
               styles.title,
@@ -268,7 +270,16 @@ const OnboardingProfile = ({ onComplete }) => {
           </Text>
         </View>
 
-        <View style={[styles.form, { backgroundColor: theme.colors.surface }]}>
+        <View
+          style={[
+            styles.form,
+            {
+              backgroundColor: theme.colors.surfaceSecondary,
+              borderWidth: 1,
+              borderColor: theme.colors.border,
+            },
+          ]}
+        >
           <View style={styles.formGroup}>
             <Text
               style={[
@@ -433,32 +444,35 @@ const OnboardingProfile = ({ onComplete }) => {
         </View>
 
         <TouchableOpacity
-          style={[
-            styles.continueButton,
-            { backgroundColor: theme.colors.primary },
-            isLoading && styles.disabledButton,
-          ]}
           onPress={handleSubmit}
           disabled={isLoading}
           activeOpacity={0.85}
+          style={[styles.continueButtonWrapper, isLoading && styles.disabledButton]}
         >
-          <Text
-            style={[
-              styles.continueButtonText,
-              { color: theme.colors.pureWhite },
-              theme.typography.button,
-            ]}
+          <LinearGradient
+            colors={theme.gradients.primary}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={[styles.continueButton, theme.shadows.glow.sm]}
           >
-            {isLoading ? "Saving..." : "Continue"}
-          </Text>
-          {!isLoading && (
-            <Ionicons
-              name="arrow-forward"
-              size={20}
-              color={theme.colors.pureWhite}
-              style={styles.buttonIcon}
-            />
-          )}
+            <Text
+              style={[
+                styles.continueButtonText,
+                { color: theme.colors.pureWhite },
+                theme.typography.button,
+              ]}
+            >
+              {isLoading ? "Saving..." : "Continue"}
+            </Text>
+            {!isLoading && (
+              <Ionicons
+                name="arrow-forward"
+                size={20}
+                color={theme.colors.pureWhite}
+                style={styles.buttonIcon}
+              />
+            )}
+          </LinearGradient>
         </TouchableOpacity>
       </ScrollView>
     </SafeAreaView>
@@ -566,12 +580,16 @@ const styles = StyleSheet.create({
     marginBottom: 8,
     fontWeight: "500",
   },
+  continueButtonWrapper: {
+    borderRadius: 16,
+    overflow: "hidden",
+  },
   continueButton: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
     paddingVertical: 16,
-    borderRadius: 12,
+    borderRadius: 16,
   },
   disabledButton: {
     opacity: 0.6,

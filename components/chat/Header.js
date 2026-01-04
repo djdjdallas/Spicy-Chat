@@ -8,14 +8,15 @@ import {
   Platform,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { useNavigation, DrawerActions } from "@react-navigation/native";
+import { useNavigation } from "@react-navigation/native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { LinearGradient } from "expo-linear-gradient";
 import { useTheme } from "../../context/ThemeContext";
 
 export const ChatHeader = ({ onNewChat, title = "Poise" }) => {
   const navigation = useNavigation();
   const insets = useSafeAreaInsets();
-  const { theme } = useTheme();
+  const { theme, isDark } = useTheme();
 
   const handleNewChat = () => {
     if (onNewChat) {
@@ -27,65 +28,90 @@ export const ChatHeader = ({ onNewChat, title = "Poise" }) => {
     navigation.navigate("ScreenshotAnalysis");
   };
 
+  const handleHistory = () => {
+    navigation.navigate("History");
+  };
+
   return (
     <View
       style={[
         styles.header,
         {
           paddingTop: insets.top,
-          backgroundColor: theme.colors.black,
-          ...theme.shadows.md,
+          backgroundColor: isDark
+            ? theme.colors.headerBackground
+            : theme.colors.background,
+          borderBottomWidth: 1,
+          borderBottomColor: theme.colors.border,
         },
       ]}
     >
+      {/* History button */}
       <TouchableOpacity
-        onPress={() => navigation.dispatch(DrawerActions.toggleDrawer())}
+        onPress={handleHistory}
         style={[
           styles.menuButton,
-          { backgroundColor: theme.colors.charcoal },
+          {
+            backgroundColor: theme.colors.glassHeavy,
+            borderWidth: 1,
+            borderColor: theme.colors.borderLight,
+          },
         ]}
         activeOpacity={0.7}
       >
-        <Ionicons name="menu" size={22} color={theme.colors.pureWhite} />
+        <Ionicons name="time-outline" size={22} color={theme.colors.textPrimary} />
       </TouchableOpacity>
 
+      {/* Logo and title */}
       <View style={styles.titleContainer}>
-        <View style={[styles.logoContainer, { backgroundColor: theme.colors.primary }]}>
-          <Text style={[styles.logoText, { color: theme.colors.pureWhite }]}>P</Text>
-        </View>
-        <Text style={[styles.headerText, { color: theme.colors.pureWhite }, theme.typography.h3]}>
+        <LinearGradient
+          colors={theme.gradients.primary}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={[styles.logoContainer, theme.shadows.glow.sm]}
+        >
+          <Text style={styles.logoText}>P</Text>
+        </LinearGradient>
+        <Text
+          style={[
+            styles.headerText,
+            { color: theme.colors.textPrimary },
+            theme.typography.h3,
+          ]}
+        >
           {title}
         </Text>
       </View>
 
+      {/* Right action buttons */}
       <View style={styles.rightButtons}>
         <TouchableOpacity
           style={[
             styles.menuButton,
-            { backgroundColor: theme.colors.charcoal },
+            {
+              backgroundColor: theme.colors.glassHeavy,
+              borderWidth: 1,
+              borderColor: theme.colors.borderLight,
+            },
           ]}
           onPress={handleScreenshotAnalysis}
           activeOpacity={0.7}
         >
-          <Ionicons
-            name="camera"
-            size={20}
-            color={theme.colors.pureWhite}
-          />
+          <Ionicons name="camera" size={20} color={theme.colors.textPrimary} />
         </TouchableOpacity>
         <TouchableOpacity
           style={[
             styles.menuButton,
-            { backgroundColor: theme.colors.charcoal },
+            {
+              backgroundColor: theme.colors.shimmer,
+              borderWidth: 1,
+              borderColor: theme.colors.primary,
+            },
           ]}
           onPress={handleNewChat}
           activeOpacity={0.7}
         >
-          <Ionicons
-            name="add"
-            size={22}
-            color={theme.colors.pureWhite}
-          />
+          <Ionicons name="add" size={22} color={theme.colors.primary} />
         </TouchableOpacity>
       </View>
     </View>
@@ -129,6 +155,7 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: "700",
     letterSpacing: -0.5,
+    color: "#FFFFFF",
   },
   headerText: {
     // Typography applied via theme

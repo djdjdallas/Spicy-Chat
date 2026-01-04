@@ -14,6 +14,7 @@ import {
   Animated,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import { LinearGradient } from "expo-linear-gradient";
 import { useTheme } from "../context/ThemeContext";
 import {
   checkSubscriptionStatus,
@@ -23,6 +24,7 @@ import {
   getManageSubscriptionUrl,
   SUBSCRIPTION_TIERS,
 } from "../services/subscription";
+import { TERMS_URL, PRIVACY_URL } from "../config/app";
 
 // Features list for paywall
 const FEATURES = [
@@ -201,10 +203,11 @@ export const Subscription = ({ navigation, route }) => {
           styles.tierCard,
           {
             transform: [{ scale: scaleAnims[tierKey] }],
-            backgroundColor: theme.colors.surface,
+            backgroundColor: theme.colors.surfaceSecondary,
             borderColor: isSelected ? theme.colors.primary : theme.colors.border,
             borderWidth: isSelected ? 2 : 1,
           },
+          isSelected && theme.shadows.glow.sm,
         ]}
       >
         <TouchableOpacity
@@ -220,7 +223,7 @@ export const Subscription = ({ navigation, route }) => {
                   backgroundColor:
                     config.color === "success"
                       ? theme.colors.successMuted
-                      : theme.colors.primaryMuted,
+                      : theme.colors.shimmer,
                 },
               ]}
             >
@@ -244,7 +247,7 @@ export const Subscription = ({ navigation, route }) => {
           <Text
             style={[
               styles.tierName,
-              { color: theme.colors.textSecondary },
+              { color: theme.colors.textMuted },
               theme.typography.overline,
             ]}
           >
@@ -255,8 +258,7 @@ export const Subscription = ({ navigation, route }) => {
             <Text
               style={[
                 styles.tierPrice,
-                { color: theme.colors.textPrimary },
-                theme.typography.h2,
+                { color: theme.colors.textPrimary, fontSize: 24, fontWeight: "700" },
               ]}
             >
               {price}
@@ -264,7 +266,7 @@ export const Subscription = ({ navigation, route }) => {
             <Text
               style={[
                 styles.tierPeriod,
-                { color: theme.colors.textSecondary },
+                { color: theme.colors.textMuted },
                 theme.typography.bodySmall,
               ]}
             >
@@ -273,9 +275,14 @@ export const Subscription = ({ navigation, route }) => {
           </View>
 
           {isSelected && (
-            <View style={[styles.selectedIndicator, { backgroundColor: theme.colors.primary }]}>
+            <LinearGradient
+              colors={theme.gradients.primary}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              style={styles.selectedIndicator}
+            >
               <Ionicons name="checkmark" size={16} color={theme.colors.pureWhite} />
-            </View>
+            </LinearGradient>
           )}
         </TouchableOpacity>
       </Animated.View>
@@ -306,11 +313,16 @@ export const Subscription = ({ navigation, route }) => {
               You're a Poise Pro!
             </Text>
 
-            <View style={[styles.tierBadgeLarge, { backgroundColor: theme.colors.primaryMuted }]}>
-              <Text style={[{ color: theme.colors.primary }, theme.typography.button]}>
+            <LinearGradient
+              colors={theme.gradients.primary}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              style={styles.tierBadgeLarge}
+            >
+              <Text style={[{ color: theme.colors.pureWhite }, theme.typography.button]}>
                 {tierInfo.name} Plan
               </Text>
-            </View>
+            </LinearGradient>
 
             <Text style={[styles.subscribedSubtitle, { color: theme.colors.textSecondary }, theme.typography.body]}>
               You have access to all premium features
@@ -328,7 +340,13 @@ export const Subscription = ({ navigation, route }) => {
             </View>
 
             <TouchableOpacity
-              style={[styles.manageButton, { backgroundColor: theme.colors.surface, borderColor: theme.colors.border }]}
+              style={[
+                styles.manageButton,
+                {
+                  backgroundColor: theme.colors.surfaceSecondary,
+                  borderColor: theme.colors.border,
+                },
+              ]}
               onPress={handleManageSubscription}
             >
               <Ionicons name="settings-outline" size={20} color={theme.colors.textPrimary} />
@@ -354,9 +372,14 @@ export const Subscription = ({ navigation, route }) => {
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
         {/* Header */}
         <View style={styles.header}>
-          <View style={[styles.proIcon, { backgroundColor: theme.colors.primaryMuted }]}>
-            <Ionicons name="diamond" size={32} color={theme.colors.primary} />
-          </View>
+          <LinearGradient
+            colors={theme.gradients.primary}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={[styles.proIcon, theme.shadows.glow.md]}
+          >
+            <Ionicons name="diamond" size={32} color={theme.colors.pureWhite} />
+          </LinearGradient>
           <Text style={[styles.title, { color: theme.colors.textPrimary }, theme.typography.h1]}>
             POISE PRO
           </Text>
@@ -381,13 +404,13 @@ export const Subscription = ({ navigation, route }) => {
                 <Ionicons
                   name={isIncluded ? "checkmark-circle" : "close-circle"}
                   size={22}
-                  color={isIncluded ? theme.colors.success : theme.colors.textTertiary}
+                  color={isIncluded ? theme.colors.success : theme.colors.textMuted}
                 />
                 <Text
                   style={[
                     styles.featureItemText,
                     {
-                      color: isIncluded ? theme.colors.textPrimary : theme.colors.textTertiary,
+                      color: isIncluded ? theme.colors.textPrimary : theme.colors.textMuted,
                     },
                     theme.typography.body,
                   ]}
@@ -401,24 +424,25 @@ export const Subscription = ({ navigation, route }) => {
 
         {/* Purchase Button */}
         <TouchableOpacity
-          style={[
-            styles.purchaseButton,
-            {
-              backgroundColor: theme.colors.primary,
-              opacity: isPurchasing ? 0.7 : 1,
-            },
-          ]}
           onPress={handlePurchase}
           disabled={isPurchasing}
           activeOpacity={0.85}
+          style={[styles.purchaseButtonWrapper, { opacity: isPurchasing ? 0.7 : 1 }]}
         >
-          {isPurchasing ? (
-            <ActivityIndicator color={theme.colors.pureWhite} />
-          ) : (
-            <Text style={[styles.purchaseButtonText, { color: theme.colors.pureWhite }, theme.typography.button]}>
-              Continue with {TIER_CONFIG[selectedTier].name}
-            </Text>
-          )}
+          <LinearGradient
+            colors={theme.gradients.primary}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={[styles.purchaseButton, theme.shadows.glow.sm]}
+          >
+            {isPurchasing ? (
+              <ActivityIndicator color={theme.colors.pureWhite} />
+            ) : (
+              <Text style={[styles.purchaseButtonText, { color: theme.colors.pureWhite }, theme.typography.button]}>
+                Continue with {TIER_CONFIG[selectedTier].name}
+              </Text>
+            )}
+          </LinearGradient>
         </TouchableOpacity>
 
         {/* Footer Links */}
@@ -429,9 +453,9 @@ export const Subscription = ({ navigation, route }) => {
             </Text>
           </TouchableOpacity>
 
-          <Text style={[styles.footerDivider, { color: theme.colors.textTertiary }]}>|</Text>
+          <Text style={[styles.footerDivider, { color: theme.colors.textMuted }]}>|</Text>
 
-          <TouchableOpacity onPress={() => Linking.openURL("https://poise.app/terms")}>
+          <TouchableOpacity onPress={() => Linking.openURL(TERMS_URL)}>
             <Text style={[styles.footerLink, { color: theme.colors.textSecondary }, theme.typography.bodySmall]}>
               Terms & Privacy
             </Text>
@@ -439,7 +463,7 @@ export const Subscription = ({ navigation, route }) => {
         </View>
 
         {/* Terms Text */}
-        <Text style={[styles.terms, { color: theme.colors.textTertiary }, theme.typography.caption]}>
+        <Text style={[styles.terms, { color: theme.colors.textMuted }, theme.typography.caption]}>
           Subscriptions automatically renew unless cancelled at least 24 hours before the end of the current period.
           Your account will be charged through your App Store account.
         </Text>
@@ -483,7 +507,7 @@ const styles = StyleSheet.create({
   tiersContainer: {
     flexDirection: "row",
     justifyContent: "space-between",
-    gap: 10,
+    gap: 8,
     marginBottom: 32,
   },
   tierCard: {
@@ -492,9 +516,10 @@ const styles = StyleSheet.create({
     overflow: "hidden",
   },
   tierCardContent: {
-    padding: 16,
+    paddingVertical: 16,
+    paddingHorizontal: 8,
     alignItems: "center",
-    minHeight: 120,
+    minHeight: 130,
     justifyContent: "center",
   },
   tierBadge: {
@@ -513,6 +538,7 @@ const styles = StyleSheet.create({
   },
   tierPrice: {
     marginBottom: 2,
+    textAlign: "center",
   },
   tierPeriod: {},
   selectedIndicator: {
@@ -535,11 +561,15 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   featureItemText: {},
+  purchaseButtonWrapper: {
+    borderRadius: 16,
+    overflow: "hidden",
+    marginBottom: 20,
+  },
   purchaseButton: {
     paddingVertical: 16,
-    borderRadius: 12,
+    borderRadius: 16,
     alignItems: "center",
-    marginBottom: 20,
   },
   purchaseButtonText: {},
   footerLinks: {

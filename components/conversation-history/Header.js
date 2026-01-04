@@ -23,6 +23,10 @@ export const Header = ({
               backgroundColor: isSelectionMode
                 ? theme.colors.primaryMuted
                 : theme.colors.surfaceSecondary,
+              borderWidth: 1,
+              borderColor: isSelectionMode
+                ? theme.colors.primary
+                : theme.colors.border,
             },
           ]}
           onPress={toggleSelectionMode}
@@ -58,7 +62,7 @@ const styles = StyleSheet.create({
   selectButton: {
     paddingHorizontal: 16,
     paddingVertical: 8,
-    borderRadius: 8,
+    borderRadius: 12,
   },
   selectButtonText: {},
 });

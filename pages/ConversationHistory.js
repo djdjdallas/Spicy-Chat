@@ -12,6 +12,7 @@ import {
 import { supabase } from "../lib/supabase";
 import { useNavigation } from "@react-navigation/native";
 import { Ionicons } from "@expo/vector-icons";
+import { LinearGradient } from "expo-linear-gradient";
 import { useTheme } from "../context/ThemeContext";
 
 export default function ConversationHistory() {
@@ -256,8 +257,9 @@ export default function ConversationHistory() {
         style={[
           styles.conversationCard,
           {
-            backgroundColor: theme.colors.surface,
-            ...theme.shadows.sm,
+            backgroundColor: theme.colors.surfaceSecondary,
+            borderWidth: 1,
+            borderColor: theme.colors.border,
           },
           isSelected && {
             backgroundColor: theme.colors.primaryMuted,
@@ -292,13 +294,13 @@ export default function ConversationHistory() {
           <View
             style={[
               styles.iconContainer,
-              { backgroundColor: theme.colors.backgroundTertiary },
+              { backgroundColor: theme.colors.shimmerLight },
             ]}
           >
             <Ionicons
               name="chatbubble-outline"
               size={20}
-              color={theme.colors.textSecondary}
+              color={theme.colors.primary}
             />
           </View>
 
@@ -401,8 +403,12 @@ export default function ConversationHistory() {
               styles.selectButton,
               {
                 backgroundColor: isSelectionMode
+                  ? theme.colors.primaryMuted
+                  : theme.colors.surfaceSecondary,
+                borderWidth: 1,
+                borderColor: isSelectionMode
                   ? theme.colors.primary
-                  : theme.colors.backgroundTertiary,
+                  : theme.colors.border,
               },
             ]}
             onPress={toggleSelectionMode}
@@ -413,8 +419,8 @@ export default function ConversationHistory() {
                 styles.selectButtonText,
                 {
                   color: isSelectionMode
-                    ? theme.colors.pureWhite
-                    : theme.colors.textPrimary,
+                    ? theme.colors.primary
+                    : theme.colors.textSecondary,
                 },
                 theme.typography.button,
               ]}
@@ -426,19 +432,16 @@ export default function ConversationHistory() {
       </View>
 
       {isSelectionMode && selectedConversations.size > 0 && (
-        <View
-          style={[
-            styles.selectionBar,
-            {
-              backgroundColor: theme.colors.surface,
-              ...theme.shadows.sm,
-            },
-          ]}
+        <LinearGradient
+          colors={theme.gradients.primary}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={[styles.selectionBar, theme.shadows.glow.sm]}
         >
           <Text
             style={[
               styles.selectedCount,
-              { color: theme.colors.textPrimary },
+              { color: theme.colors.pureWhite },
               theme.typography.body,
             ]}
           >
@@ -467,23 +470,23 @@ export default function ConversationHistory() {
               Delete
             </Text>
           </TouchableOpacity>
-        </View>
+        </LinearGradient>
       )}
 
       {conversations.length === 0 ? (
         <View style={styles.emptyState}>
-          <View
-            style={[
-              styles.emptyIcon,
-              { backgroundColor: theme.colors.backgroundTertiary },
-            ]}
+          <LinearGradient
+            colors={theme.gradients.primary}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={[styles.emptyIcon, theme.shadows.glow.sm]}
           >
             <Ionicons
               name="chatbubbles-outline"
               size={48}
-              color={theme.colors.textTertiary}
+              color={theme.colors.pureWhite}
             />
-          </View>
+          </LinearGradient>
           <Text
             style={[
               styles.emptyTitle,
@@ -503,22 +506,26 @@ export default function ConversationHistory() {
             Start a new chat to begin practicing your conversation skills
           </Text>
           <TouchableOpacity
-            style={[
-              styles.startChatButton,
-              { backgroundColor: theme.colors.primary },
-            ]}
             onPress={() => navigation.navigate("Chat")}
             activeOpacity={0.85}
+            style={styles.startChatWrapper}
           >
-            <Text
-              style={[
-                styles.startChatText,
-                { color: theme.colors.pureWhite },
-                theme.typography.button,
-              ]}
+            <LinearGradient
+              colors={theme.gradients.primary}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              style={[styles.startChatButton, theme.shadows.glow.sm]}
             >
-              Start a Chat
-            </Text>
+              <Text
+                style={[
+                  styles.startChatText,
+                  { color: theme.colors.pureWhite },
+                  theme.typography.button,
+                ]}
+              >
+                Start a Chat
+              </Text>
+            </LinearGradient>
           </TouchableOpacity>
         </View>
       ) : (
@@ -540,6 +547,7 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     padding: 16,
+    paddingTop: 60,
   },
   loadingContainer: {
     flex: 1,
@@ -666,10 +674,14 @@ const styles = StyleSheet.create({
     textAlign: "center",
     marginBottom: 24,
   },
+  startChatWrapper: {
+    borderRadius: 16,
+    overflow: "hidden",
+  },
   startChatButton: {
     paddingVertical: 14,
     paddingHorizontal: 32,
-    borderRadius: 12,
+    borderRadius: 16,
   },
   startChatText: {
     // Typography applied via theme

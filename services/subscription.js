@@ -5,11 +5,13 @@ import Purchases from "react-native-purchases";
 import { Platform } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { supabase } from "../lib/supabase";
-import {
-  REVENUECAT_API_KEY,
-  REVENUECAT_IOS_KEY,
-  REVENUECAT_ANDROID_KEY,
-} from "@env";
+import Constants from "expo-constants";
+
+// Get env vars from expo-constants extra
+const extra = Constants.expoConfig?.extra || Constants.manifest?.extra || {};
+const REVENUECAT_API_KEY = extra.revenuecatApiKey;
+const REVENUECAT_IOS_KEY = extra.revenuecatIosKey;
+const REVENUECAT_ANDROID_KEY = extra.revenuecatAndroidKey;
 
 // Entitlement identifiers
 export const ENTITLEMENTS = {

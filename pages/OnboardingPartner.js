@@ -10,6 +10,7 @@ import {
   ScrollView,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import { LinearGradient } from "expo-linear-gradient";
 import { useConversationPartner } from "../features/ConversationPartner";
 import { supabase } from "../lib/supabase";
 import { useTheme } from "../context/ThemeContext";
@@ -86,7 +87,7 @@ const OnboardingPartner = ({ onComplete }) => {
         style={[
           styles.partnerCard,
           {
-            backgroundColor: theme.colors.surface,
+            backgroundColor: theme.colors.surfaceSecondary,
             borderColor: isSelected ? theme.colors.primary : theme.colors.border,
             borderWidth: isSelected ? 2 : 1,
           },
@@ -95,22 +96,33 @@ const OnboardingPartner = ({ onComplete }) => {
         activeOpacity={0.7}
       >
         <View style={styles.partnerHeader}>
-          <View
-            style={[
-              styles.avatarContainer,
-              {
-                backgroundColor: isSelected
-                  ? theme.colors.primaryMuted
-                  : theme.colors.backgroundTertiary,
-              },
-            ]}
-          >
-            <Ionicons
-              name="person"
-              size={24}
-              color={isSelected ? theme.colors.primary : theme.colors.textSecondary}
-            />
-          </View>
+          {isSelected ? (
+            <LinearGradient
+              colors={theme.gradients.primary}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              style={styles.avatarContainer}
+            >
+              <Ionicons
+                name="person"
+                size={24}
+                color={theme.colors.pureWhite}
+              />
+            </LinearGradient>
+          ) : (
+            <View
+              style={[
+                styles.avatarContainer,
+                { backgroundColor: theme.colors.shimmerLight },
+              ]}
+            >
+              <Ionicons
+                name="person"
+                size={24}
+                color={theme.colors.primary}
+              />
+            </View>
+          )}
           <View style={styles.partnerTitleSection}>
             <Text
               style={[
@@ -216,14 +228,14 @@ const OnboardingPartner = ({ onComplete }) => {
         showsVerticalScrollIndicator={false}
       >
         <View style={styles.header}>
-          <View
-            style={[
-              styles.iconContainer,
-              { backgroundColor: theme.colors.primaryMuted },
-            ]}
+          <LinearGradient
+            colors={theme.gradients.primary}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={[styles.iconContainer, theme.shadows.glow.sm]}
           >
-            <Ionicons name="people-outline" size={32} color={theme.colors.primary} />
-          </View>
+            <Ionicons name="people-outline" size={32} color={theme.colors.pureWhite} />
+          </LinearGradient>
           <Text
             style={[
               styles.title,
@@ -273,42 +285,56 @@ const OnboardingPartner = ({ onComplete }) => {
           { backgroundColor: theme.colors.background, borderTopColor: theme.colors.border },
         ]}
       >
-        <TouchableOpacity
-          style={[
-            styles.continueButton,
-            {
-              backgroundColor: selectedPartner
-                ? theme.colors.primary
-                : theme.colors.surfaceSecondary,
-            },
-            isLoading && styles.disabledButton,
-          ]}
-          onPress={handleContinue}
-          disabled={!selectedPartner || isLoading}
-          activeOpacity={0.85}
-        >
-          <Text
+        {selectedPartner ? (
+          <TouchableOpacity
+            onPress={handleContinue}
+            disabled={isLoading}
+            activeOpacity={0.85}
+            style={[styles.continueButtonWrapper, isLoading && styles.disabledButton]}
+          >
+            <LinearGradient
+              colors={theme.gradients.primary}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              style={[styles.continueButton, theme.shadows.glow.sm]}
+            >
+              <Text
+                style={[
+                  styles.continueButtonText,
+                  { color: theme.colors.pureWhite },
+                  theme.typography.button,
+                ]}
+              >
+                {isLoading ? "Starting..." : "Start Chatting"}
+              </Text>
+              {!isLoading && (
+                <Ionicons
+                  name="arrow-forward"
+                  size={20}
+                  color={theme.colors.pureWhite}
+                  style={styles.buttonIcon}
+                />
+              )}
+            </LinearGradient>
+          </TouchableOpacity>
+        ) : (
+          <View
             style={[
-              styles.continueButtonText,
-              {
-                color: selectedPartner
-                  ? theme.colors.pureWhite
-                  : theme.colors.textTertiary,
-              },
-              theme.typography.button,
+              styles.continueButton,
+              { backgroundColor: theme.colors.surfaceSecondary },
             ]}
           >
-            {isLoading ? "Starting..." : "Start Chatting"}
-          </Text>
-          {!isLoading && selectedPartner && (
-            <Ionicons
-              name="arrow-forward"
-              size={20}
-              color={theme.colors.pureWhite}
-              style={styles.buttonIcon}
-            />
-          )}
-        </TouchableOpacity>
+            <Text
+              style={[
+                styles.continueButtonText,
+                { color: theme.colors.textTertiary },
+                theme.typography.button,
+              ]}
+            >
+              Start Chatting
+            </Text>
+          </View>
+        )}
         <TouchableOpacity
           style={styles.skipButton}
           onPress={handleChooseLater}
@@ -430,12 +456,16 @@ const styles = StyleSheet.create({
     paddingBottom: 34,
     borderTopWidth: 1,
   },
+  continueButtonWrapper: {
+    borderRadius: 16,
+    overflow: "hidden",
+  },
   continueButton: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
     paddingVertical: 16,
-    borderRadius: 12,
+    borderRadius: 16,
   },
   disabledButton: {
     opacity: 0.6,

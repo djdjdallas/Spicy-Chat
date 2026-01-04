@@ -13,11 +13,11 @@ export const APP_VERSION = Constants.expoConfig?.version || "1.0.0";
 
 // Support URLs
 export const SUPPORT_EMAIL = "support@poise.app";
-export const HELP_URL = "https://poise.app/help";
+export const HELP_URL = "https://trypoise.app/help";
 
 // Legal URLs
-export const TERMS_URL = "https://poise.app/terms";
-export const PRIVACY_URL = "https://poise.app/privacy";
+export const TERMS_URL = "https://trypoise.app/terms";
+export const PRIVACY_URL = "https://trypoise.app/privacy";
 
 // Deep linking scheme
 export const URL_SCHEME = "poise";

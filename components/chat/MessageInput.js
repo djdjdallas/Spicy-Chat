@@ -10,11 +10,22 @@ import {
   Keyboard,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import { LinearGradient } from "expo-linear-gradient";
 import { useTheme } from "../../context/ThemeContext";
 
-export const MessageInput = memo(({ sendMessage, isLoading }) => {
-  const { theme } = useTheme();
-  const [localInputText, setLocalInputText] = useState("");
+export const MessageInput = memo(({ sendMessage, isLoading, initialText = "" }) => {
+  const { theme, isDark } = useTheme();
+  const [localInputText, setLocalInputText] = useState(initialText);
+  const [isFocused, setIsFocused] = useState(false);
+  const [hasInitialized, setHasInitialized] = useState(false);
+
+  // Handle initialText updates (when navigating with prefilled text)
+  React.useEffect(() => {
+    if (initialText && !hasInitialized) {
+      setLocalInputText(initialText);
+      setHasInitialized(true);
+    }
+  }, [initialText, hasInitialized]);
 
   const handleChangeText = useCallback((text) => {
     setLocalInputText(text);
@@ -44,13 +55,56 @@ export const MessageInput = memo(({ sendMessage, isLoading }) => {
 
   const isDisabled = !localInputText?.trim() || isLoading;
 
+  // Gradient button for send
+  const SendButton = () => {
+    if (isDisabled) {
+      return (
+        <View
+          style={[
+            styles.sendButton,
+            { backgroundColor: theme.colors.backgroundTertiary },
+          ]}
+        >
+          {isLoading ? (
+            <ActivityIndicator color={theme.colors.textMuted} size="small" />
+          ) : (
+            <Ionicons
+              name="arrow-up"
+              size={22}
+              color={theme.colors.textMuted}
+            />
+          )}
+        </View>
+      );
+    }
+
+    return (
+      <TouchableOpacity
+        onPress={handleSend}
+        activeOpacity={0.8}
+        style={styles.sendButtonWrapper}
+      >
+        <LinearGradient
+          colors={theme.gradients.primary}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={[styles.sendButton, theme.shadows.glow.sm]}
+        >
+          <Ionicons name="arrow-up" size={22} color={theme.colors.pureWhite} />
+        </LinearGradient>
+      </TouchableOpacity>
+    );
+  };
+
   return (
     <View
       style={[
         styles.container,
         {
+          backgroundColor: isDark
+            ? theme.colors.headerBackground
+            : theme.colors.surface,
           borderTopColor: theme.colors.border,
-          backgroundColor: theme.colors.surface,
         },
       ]}
     >
@@ -60,7 +114,12 @@ export const MessageInput = memo(({ sendMessage, isLoading }) => {
             styles.inputWrapper,
             {
               backgroundColor: theme.colors.inputBackground,
-              borderColor: theme.colors.border,
+              borderColor: isFocused
+                ? theme.colors.inputFocusBorder
+                : theme.colors.inputBorder,
+            },
+            isFocused && {
+              ...theme.shadows.glow.sm,
             },
           ]}
         >
@@ -73,38 +132,17 @@ export const MessageInput = memo(({ sendMessage, isLoading }) => {
             value={localInputText}
             onChangeText={handleChangeText}
             placeholder="Type a message..."
-            placeholderTextColor={theme.colors.textTertiary}
+            placeholderTextColor={theme.colors.textMuted}
             multiline
             maxLength={2000}
             editable={!isLoading}
             onKeyPress={handleKeyPress}
+            onFocus={() => setIsFocused(true)}
+            onBlur={() => setIsFocused(false)}
           />
         </View>
 
-        <TouchableOpacity
-          style={[
-            styles.sendButton,
-            {
-              backgroundColor: isDisabled
-                ? theme.colors.graphite
-                : theme.colors.primary,
-              ...(!isDisabled && theme.shadows.sm),
-            },
-          ]}
-          onPress={handleSend}
-          disabled={isDisabled}
-          activeOpacity={0.7}
-        >
-          {isLoading ? (
-            <ActivityIndicator color={theme.colors.pureWhite} size="small" />
-          ) : (
-            <Ionicons
-              name="arrow-up"
-              size={22}
-              color={theme.colors.pureWhite}
-            />
-          )}
-        </TouchableOpacity>
+        <SendButton />
       </View>
     </View>
   );
@@ -136,6 +174,10 @@ const styles = StyleSheet.create({
     paddingBottom: Platform.OS === "ios" ? 12 : 10,
     maxHeight: 120,
     minHeight: 44,
+  },
+  sendButtonWrapper: {
+    borderRadius: 22,
+    overflow: "hidden",
   },
   sendButton: {
     borderRadius: 22,

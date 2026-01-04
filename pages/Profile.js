@@ -10,6 +10,7 @@ import {
   ActivityIndicator,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import { LinearGradient } from "expo-linear-gradient";
 import { supabase } from "../lib/supabase";
 import ProfileEditForm from "./ProfileEditForm";
 import { useTheme } from "../context/ThemeContext";
@@ -144,24 +145,25 @@ const Profile = () => {
           style={[
             styles.card,
             {
-              backgroundColor: theme.colors.surface,
-              ...theme.shadows.sm,
+              backgroundColor: theme.colors.surfaceSecondary,
+              borderWidth: 1,
+              borderColor: theme.colors.border,
             },
           ]}
         >
           <View style={styles.incompleteContent}>
-            <View
-              style={[
-                styles.iconContainer,
-                { backgroundColor: theme.colors.primaryMuted },
-              ]}
+            <LinearGradient
+              colors={theme.gradients.primary}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              style={[styles.iconContainer, theme.shadows.glow.sm]}
             >
               <Ionicons
                 name="person-outline"
                 size={32}
-                color={theme.colors.primary}
+                color={theme.colors.pureWhite}
               />
-            </View>
+            </LinearGradient>
             <Text
               style={[
                 styles.incompleteTitle,
@@ -182,22 +184,26 @@ const Profile = () => {
               profile.
             </Text>
             <TouchableOpacity
-              style={[
-                styles.primaryButton,
-                { backgroundColor: theme.colors.primary },
-              ]}
               onPress={() => setIsEditing(true)}
               activeOpacity={0.85}
+              style={styles.buttonWrapper}
             >
-              <Text
-                style={[
-                  styles.primaryButtonText,
-                  { color: theme.colors.textInverted },
-                  theme.typography.button,
-                ]}
+              <LinearGradient
+                colors={theme.gradients.primary}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+                style={[styles.primaryButton, theme.shadows.glow.sm]}
               >
-                Complete Profile
-              </Text>
+                <Text
+                  style={[
+                    styles.primaryButtonText,
+                    { color: theme.colors.pureWhite },
+                    theme.typography.button,
+                  ]}
+                >
+                  Complete Profile
+                </Text>
+              </LinearGradient>
             </TouchableOpacity>
           </View>
         </View>
@@ -251,12 +257,16 @@ const Profile = () => {
         <TouchableOpacity
           style={[
             styles.editButton,
-            { backgroundColor: theme.colors.backgroundTertiary },
+            {
+              backgroundColor: theme.colors.shimmerLight,
+              borderWidth: 1,
+              borderColor: theme.colors.primary,
+            },
           ]}
           onPress={() => setIsEditing(true)}
           activeOpacity={0.7}
         >
-          <Ionicons name="pencil" size={20} color={theme.colors.textPrimary} />
+          <Ionicons name="pencil" size={20} color={theme.colors.primary} />
         </TouchableOpacity>
       </View>
 
@@ -264,8 +274,9 @@ const Profile = () => {
         style={[
           styles.card,
           {
-            backgroundColor: theme.colors.surface,
-            ...theme.shadows.sm,
+            backgroundColor: theme.colors.surfaceSecondary,
+            borderWidth: 1,
+            borderColor: theme.colors.border,
           },
         ]}
       >
@@ -283,8 +294,8 @@ const Profile = () => {
             <Text
               style={[
                 styles.label,
-                { color: theme.colors.textSecondary },
-                theme.typography.caption,
+                { color: theme.colors.textMuted },
+                theme.typography.overline,
               ]}
             >
               {item.label.toUpperCase()}
@@ -292,7 +303,11 @@ const Profile = () => {
             <Text
               style={[
                 styles.value,
-                { color: theme.colors.textPrimary },
+                {
+                  color: item.value
+                    ? theme.colors.textPrimary
+                    : theme.colors.textMuted,
+                },
                 theme.typography.body,
               ]}
             >
@@ -359,10 +374,15 @@ const styles = StyleSheet.create({
     marginBottom: 24,
     paddingHorizontal: 16,
   },
+  buttonWrapper: {
+    width: "100%",
+    borderRadius: 16,
+    overflow: "hidden",
+  },
   primaryButton: {
     paddingVertical: 16,
     paddingHorizontal: 32,
-    borderRadius: 12,
+    borderRadius: 16,
     width: "100%",
     alignItems: "center",
   },
@@ -375,7 +395,6 @@ const styles = StyleSheet.create({
   },
   label: {
     marginBottom: 4,
-    letterSpacing: 1,
   },
   value: {
     // Typography applied via theme

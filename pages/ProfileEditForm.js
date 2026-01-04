@@ -11,6 +11,7 @@ import {
   Modal,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import { LinearGradient } from "expo-linear-gradient";
 import { useTheme } from "../context/ThemeContext";
 
 const DATING_GOALS = [
@@ -86,7 +87,11 @@ const DropdownSelect = ({ label, value, options, onSelect, theme }) => {
           <View
             style={[
               styles.modalContent,
-              { backgroundColor: theme.colors.surface },
+              {
+                backgroundColor: theme.colors.surfaceSecondary,
+                borderWidth: 1,
+                borderColor: theme.colors.border,
+              },
             ]}
           >
             <View style={styles.modalHeader}>
@@ -231,12 +236,20 @@ const ProfileEditForm = ({ profile, onSave, onCancel }) => {
   return (
     <ScrollView style={[styles.container, { backgroundColor: theme.colors.background }]}>
       <View style={styles.header}>
-        <Text style={[styles.heading, { color: theme.colors.primary }, theme.typography.h2]}>
+        <Text style={[styles.heading, { color: theme.colors.textPrimary }, theme.typography.h2]}>
           Edit Profile
         </Text>
         <View style={styles.headerButtons}>
           <TouchableOpacity
-            style={[styles.headerButton, styles.cancelButton, { backgroundColor: theme.colors.surfaceSecondary }]}
+            style={[
+              styles.headerButton,
+              styles.cancelButton,
+              {
+                backgroundColor: theme.colors.surfaceSecondary,
+                borderWidth: 1,
+                borderColor: theme.colors.border,
+              },
+            ]}
             onPress={onCancel}
           >
             <Text style={[styles.cancelButtonText, { color: theme.colors.textSecondary }, theme.typography.buttonSmall]}>
@@ -244,17 +257,34 @@ const ProfileEditForm = ({ profile, onSave, onCancel }) => {
             </Text>
           </TouchableOpacity>
           <TouchableOpacity
-            style={[styles.headerButton, styles.saveButton, { backgroundColor: theme.colors.primary }]}
             onPress={handleSubmit}
+            activeOpacity={0.85}
+            style={styles.saveButtonWrapper}
           >
-            <Text style={[styles.saveButtonText, { color: theme.colors.pureWhite }, theme.typography.buttonSmall]}>
-              Save
-            </Text>
+            <LinearGradient
+              colors={theme.gradients.primary}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              style={[styles.headerButton, styles.saveButton]}
+            >
+              <Text style={[styles.saveButtonText, { color: theme.colors.pureWhite }, theme.typography.buttonSmall]}>
+                Save
+              </Text>
+            </LinearGradient>
           </TouchableOpacity>
         </View>
       </View>
 
-      <View style={[styles.form, { backgroundColor: theme.colors.surface }]}>
+      <View
+        style={[
+          styles.form,
+          {
+            backgroundColor: theme.colors.surfaceSecondary,
+            borderWidth: 1,
+            borderColor: theme.colors.border,
+          },
+        ]}
+      >
         <View style={styles.formGroup}>
           <Text style={[styles.label, { color: theme.colors.textSecondary }, theme.typography.bodySmall]}>
             Full Name *
@@ -508,7 +538,11 @@ const styles = StyleSheet.create({
   headerButton: {
     paddingVertical: 8,
     paddingHorizontal: 15,
-    borderRadius: 20,
+    borderRadius: 12,
+  },
+  saveButtonWrapper: {
+    borderRadius: 12,
+    overflow: "hidden",
   },
   saveButton: {},
   cancelButton: {},
@@ -519,7 +553,7 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
   },
   form: {
-    borderRadius: 12,
+    borderRadius: 16,
     padding: 16,
   },
   formGroup: {
